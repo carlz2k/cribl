@@ -1,0 +1,9 @@
+node_modules
+*.log
+.DS_Store
+.vscode
+tmp
+src/out.html
+.metals
+.serverless
+dist

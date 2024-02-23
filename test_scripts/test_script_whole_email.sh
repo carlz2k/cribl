@@ -1,0 +1,1 @@
+sls invoke local -c serverless-dev-us-east-1.yml --function signals-alert

@@ -1,0 +1,3 @@
+webpack.config.cjs
+dist/**
+jest.config.js
