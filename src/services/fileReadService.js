@@ -9,6 +9,8 @@ export class FileReadService {
       start,
       end,
       encoding,
+      // fastest after playing with different values
+      highWaterMark: 500 * 1024,
     });
 
     reader.on('error', (error) => {
@@ -38,9 +40,11 @@ export class FileReadService {
             const chunk = streamReader.read();
             if (chunk) {
               const temp = chunk.split(EOL);
-              for (const value of temp) {
-                lines.push(value);
-              }
+              // TODO: seems like this is the bottleneck here
+              // concat is the slowest when merging large arrays
+              // iteration seems to be fastest, but not fast enough
+              // how can we get away without merging arrays;
+              Array.prototype.push.apply(lines, temp);
             }
           } catch (err) {
             reject(err);
