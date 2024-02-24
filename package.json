@@ -10,7 +10,7 @@
   ],
   "type": "module",
   "scripts": {
-    "test": "jest --config=jest.config.js",
+    "test": "jest --config=jest.config.js --logHeapUsage",
     "build": "webpack --mode production --config webpack.config.cjs",
     "dev": "webpack --mode development --config webpack.config.cjs",
     "serve": "webpack-dev-server --mode development --config webpack.config.cjs",
@@ -19,7 +19,7 @@
   "author": "Carl Zhang",
   "license": "MIT",
   "dependencies": {
-
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.22.8",
