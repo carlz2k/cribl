@@ -1,19 +1,21 @@
 import {
   isMainThread, parentPort, Worker, workerData,
 } from 'worker_threads';
+import cluster from 'cluster';
 import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
 import { FilePartitioner } from './services/filePartitioner.js';
 import { FileReadService } from './services/fileReadService.js';
 
-const __filename = fileURLToPath(import.meta.url);
+
+// const __filename = fileURLToPath(import.meta.url);
 
 export const execute = async (fileName, {
-  partitionSize = 200 * 1000000.00,
+  partitionSize = 50 * 1000000.00,
 }) => {
   if (fileName) {
-    if (isMainThread) {
-      console.log("start "+Date.now());
+    if (cluster.isPrimary) {
+      console.log("start " + Date.now());
       const requestId = uuidv4();
       const filePartitioner = new FilePartitioner(partitionSize);
 
@@ -21,7 +23,7 @@ export const execute = async (fileName, {
 
       const readerList = [];
       const numberOfPartitions = partitions.length;
-      let numberOfWorkers = 5;
+      let numberOfWorkers = 40;
       if (numberOfPartitions < numberOfWorkers) {
         numberOfWorkers = numberOfPartitions;
       }
@@ -30,43 +32,41 @@ export const execute = async (fileName, {
       for (let i = numberOfPartitions - 1; i > numberOfPartitions - 1 - numberOfWorkers; i -= 1) {
         const partition = partitions[i];
 
-        const worker = new Worker(__filename, {
-          workerData: {
-            fileName,
-            requestId,
-            partition,
-            partitionId: i,
-          },
-        });
-
-        workers.push(worker);
-      }
-
-      for (let worker of workers) {
-        worker.on('error', (err) => { throw err; });
-        worker.on('exit', () => {
-          console.log("end "+Date.now());
-          //console.log(`Thread exiting, ${workers.length} running...`);
-        });
-        worker.on('message', (msg) => {
-          // console.log(msg);
+        const worker = cluster.fork();
+        worker.on("message", ({
+          pid,
+        }) => {
+          console.log(`received message ${pid}`);
+          if (worker.process.pid === pid) {
+            console.log(`received message2 ${pid}`);
+            worker.send({
+              partition, requestId, partitionId: i,
+            });
+          }
         });
       }
     } else {
+      const workerInfo = { id: process.env.workerId, pid: process.pid };
+      console.log('[Worker ', workerInfo, '] started');
       const fileReadService = new FileReadService();
-      const {
+
+      process.send({ pid: workerInfo.pid });
+
+      process.on('message', async ({
         partition, requestId, partitionId,
-      } = workerData;
-
-      const reader = fileReadService.createReader(fileName, {
-        start: partition.start,
-        end: partition.end,
-        partitionId,
-        requestId,
+      }) => {
+        const start = Date.now();
+        const reader = fileReadService.createReader(fileName, {
+          start: partition.start,
+          end: partition.end,
+          partitionId,
+          requestId,
+        });
+        const lines = await fileReadService.readStream(reader);
+        // console.log(`${workerInfo.pid} ${partitionId} ${lines[0]}`);
+        const end = Date.now();
+        console.log(`duration = ${end - start}`);
       });
-
-      const lines = await fileReadService.readStream(reader);
-      parentPort.postMessage(`${partitionId} ${lines[lines.length - 1]}`);
     }
     return undefined;
   }
