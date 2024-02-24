@@ -5,7 +5,6 @@ describe('fileReadService', () => {
   const partitionSize = 50 * 1000000.00;
   const filePartitioner = new FilePartitioner(partitionSize);
   const fileReadService = new FileReadService();
-  const numberOfWorkers = 10;
 
   test('should render result', async () => {
     const fileName = '2020_Yellow_Taxi_Trip_Data.csv';
@@ -13,6 +12,8 @@ describe('fileReadService', () => {
 
     const readerList = [];
     const numberOfPartitions = partitions.length;
+
+    const numberOfWorkers = 20;
 
     for (let i = numberOfPartitions - 1; i > numberOfPartitions - 1 - numberOfWorkers; i -= 1) {
       const partition = partitions[i];
