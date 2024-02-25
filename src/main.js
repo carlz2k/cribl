@@ -9,7 +9,7 @@ import { WorkerThread } from './models/workerThread.js';
 
 export const mainFileName = fileURLToPath(import.meta.url);
 
-export const execute = async (fileName, { partitionSize = 15 * 1000000.00 }) => {
+export const execute = async (fileName, { partitionSize = 10 * 1000000.00 }) => {
   if (fileName) {
     if (isMainThread) {
       const requestId = uuidv4();
@@ -18,7 +18,7 @@ export const execute = async (fileName, { partitionSize = 15 * 1000000.00 }) => 
       const partitions = filePartitioner.partition(fileName);
 
       const numberOfPartitions = partitions.length;
-      let numberOfWorkers = 30;
+      let numberOfWorkers = 20;
       if (numberOfPartitions < numberOfWorkers) {
         numberOfWorkers = numberOfPartitions;
       }
