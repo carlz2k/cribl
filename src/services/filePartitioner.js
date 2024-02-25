@@ -14,7 +14,7 @@ export class FilePartitioner {
       const numberOfPartitions = Math.ceil(fileSizeInBytes / this._partitionSize);
       for (let i = 0; i < numberOfPartitions; i += 1) {
         partitions.push({
-          partitionId: i,
+          id: i,
           start: i * this._partitionSize,
           end: (i + 1) * this._partitionSize - 1,
         });

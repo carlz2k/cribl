@@ -2,21 +2,14 @@ import fs from 'fs';
 import { EOL } from 'os';
 
 export class FileReadService {
-  createReader(fileName, {
+  createReadStream(fileName, {
     start, end, requestId, partitionId, encoding = 'latin1',
   }) {
     const reader = fs.createReadStream(fileName, {
       start,
       end,
       encoding,
-    });
-
-    reader.on('error', (error) => {
-      console.error(`${requestId} ${partitionId} error: ${error.message}`);
-    });
-
-    reader.on('close', () => {
-      console.debug(`${requestId} ${partitionId} closed`);
+      highWaterMark: 1 * 1000000,
     });
 
     return {
@@ -33,14 +26,11 @@ export class FileReadService {
       const start = Date.now();
       const result = await new Promise((resolve, reject) => {
         const lines = [];
-        streamReader.on('readable', () => {
+        streamReader.on('data', (chunk) => {
           try {
-            const chunk = streamReader.read();
             if (chunk) {
               const temp = chunk.split(EOL);
-              for (const value of temp) {
-                lines.push(value);
-              }
+              Array.prototype.push.apply(lines, temp);
             }
           } catch (err) {
             reject(err);
@@ -58,11 +48,10 @@ export class FileReadService {
 
       console.log(`${result.length} chunk processing ${end - start}`);
       return result;
-      // console.debug(`finish read ${reader.requestId} ${reader.partitionId} ${lines.length}`);
     } catch (err) {
       console.error(err);
     }
 
-    return [];
+    return '';
   }
 }

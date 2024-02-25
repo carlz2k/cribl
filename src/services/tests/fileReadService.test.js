@@ -17,7 +17,7 @@ describe('fileReadService', () => {
 
     for (let i = numberOfPartitions - 1; i > numberOfPartitions - 1 - numberOfWorkers; i -= 1) {
       const partition = partitions[i];
-      const reader = fileReadService.createReader(fileName, {
+      const reader = fileReadService.createReadStream(fileName, {
         start: partition.start,
         end: partition.end,
         requestId: 'req1',

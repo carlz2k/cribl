@@ -1,75 +1,91 @@
-import {
-  isMainThread, parentPort, Worker, workerData,
-} from 'worker_threads';
-import cluster from 'cluster';
-import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import { isMainThread } from 'worker_threads';
+import { WorkerRequest } from './models/workerRequest.js';
 import { FilePartitioner } from './services/filePartitioner.js';
-import { FileReadService } from './services/fileReadService.js';
+import { ServiceFunctionNames } from './services/serviceLocator.js';
+import { WorkerPool } from './services/workerPool.js';
+import { WorkerThread } from './models/workerThread.js';
 
+export const mainFileName = fileURLToPath(import.meta.url);
 
-// const __filename = fileURLToPath(import.meta.url);
-
-export const execute = async (fileName, {
-  partitionSize = 50 * 1000000.00,
-}) => {
+export const execute = async (fileName, { partitionSize = 15 * 1000000.00 }) => {
   if (fileName) {
-    if (cluster.isPrimary) {
-      console.log("start " + Date.now());
+    if (isMainThread) {
       const requestId = uuidv4();
       const filePartitioner = new FilePartitioner(partitionSize);
 
       const partitions = filePartitioner.partition(fileName);
 
-      const readerList = [];
       const numberOfPartitions = partitions.length;
-      let numberOfWorkers = 40;
+      let numberOfWorkers = 30;
       if (numberOfPartitions < numberOfWorkers) {
         numberOfWorkers = numberOfPartitions;
       }
-      const workers = [];
 
-      for (let i = numberOfPartitions - 1; i > numberOfPartitions - 1 - numberOfWorkers; i -= 1) {
+      let start = Date.now();
+
+      const workerPool = new WorkerPool(numberOfWorkers, mainFileName);
+      const resultMap = new Map();
+      const futures = [];
+      let nextPartition = numberOfPartitions - 1;
+      for (let i = numberOfPartitions - 1; i >= 0; i -= 1) {
         const partition = partitions[i];
 
-        const worker = cluster.fork();
-        worker.on("message", ({
-          pid,
-        }) => {
-          console.log(`received message ${pid}`);
-          if (worker.process.pid === pid) {
-            console.log(`received message2 ${pid}`);
-            worker.send({
-              partition, requestId, partitionId: i,
-            });
-          }
-        });
+        const functionName = ServiceFunctionNames.processFile;
+
+        const workerJob = workerPool.submit(
+          WorkerRequest.createMessage(functionName, {
+            partition, requestId, partitionId: i, fileName, start,
+          }),
+          (result) => {
+            const partitionId = i;
+            console.log('current parition returned ' + partitionId + ' ' + nextPartition);
+            if (nextPartition == i) {
+              console.log('stream next partition' + i);
+              nextPartition = nextPartition - 1;
+            } else {
+              resultMap.set(i, result);
+
+              if (resultMap.has(nextPartition)) {
+                while (resultMap.has(nextPartition)) {
+                  resultMap.delete(nextPartition);
+                  console.log('stream next partition' + nextPartition);
+                  nextPartition = nextPartition - 1;
+                }
+              }
+            }
+            console.log(result[result.length - 1]);
+            console.log(`map size = ${resultMap.size}`);
+          },
+        );
+
+        futures.push(workerJob.future);
+      }
+
+      try {
+        console.log('total ' + futures?.length + ' requests');
+
+        const result = await Promise.all(futures);
+
+        console.log('all resolved?? ' + result?.length + ' ' + (Date.now() - start));
+
+        return result;
+      } catch (error) {
+        console.log(error);
       }
     } else {
-      const workerInfo = { id: process.env.workerId, pid: process.pid };
-      console.log('[Worker ', workerInfo, '] started');
-      const fileReadService = new FileReadService();
-
-      process.send({ pid: workerInfo.pid });
-
-      process.on('message', async ({
-        partition, requestId, partitionId,
-      }) => {
-        const start = Date.now();
-        const reader = fileReadService.createReader(fileName, {
-          start: partition.start,
-          end: partition.end,
-          partitionId,
-          requestId,
-        });
-        const lines = await fileReadService.readStream(reader);
-        // console.log(`${workerInfo.pid} ${partitionId} ${lines[0]}`);
-        const end = Date.now();
-        console.log(`duration = ${end - start}`);
-      });
+      await WorkerThread.handleRequest();
     }
+
     return undefined;
   }
 };
 
-execute('2020_Yellow_Taxi_Trip_Data.csv', {});
+const largeFile = '2020_Yellow_Taxi_Trip_Data.csv';
+const smallFile = 'taxi_zone_lookup.csv';
+const mediumFile = 'fhv_tripdata_2017-04.csv';
+
+ execute(largeFile, {});
+//execute(smallFile, {});
+//execute(mediumFile, {});
