@@ -1,40 +1,19 @@
-import { FilePartitioner } from '../filePartitioner';
 import { FileReadService } from '../fileReadService';
 
 describe('fileReadService', () => {
-  const partitionSize = 50 * 1000000.00;
-  const filePartitioner = new FilePartitioner(partitionSize);
-  const fileReadService = new FileReadService();
+  test('should rend all lines of a file block', async () => {
+    const fileReadService = new FileReadService();
+    const fileName = 'taxi_zone_lookup.csv';
+    const reader = fileReadService.createReadStream(fileName, {
+      start: 200,
+      end: 2000,
+      requestId: 'req1',
+      partitionId: 5,
+    });
 
-  test('should render result', async () => {
-    const fileName = '2020_Yellow_Taxi_Trip_Data.csv';
-    const partitions = filePartitioner.partition(fileName);
-
-    const readerList = [];
-    const numberOfPartitions = partitions.length;
-
-    const numberOfWorkers = 20;
-
-    for (let i = numberOfPartitions - 1; i > numberOfPartitions - 1 - numberOfWorkers; i -= 1) {
-      const partition = partitions[i];
-      const reader = fileReadService.createReadStream(fileName, {
-        start: partition.start,
-        end: partition.end,
-        requestId: 'req1',
-        partitionId: i,
-      });
-      readerList.push(reader);
-    }
-
-    const content = await Promise.all(
-      readerList.map(async (reader) => fileReadService.readStream(reader)),
-    );
-
-    expect(content.length).toBe(numberOfWorkers);
-
-    for (const lines of content) {
-      expect(lines.length).toBeTruthy;
-      expect(lines[lines.length - 1]).toBeTruthy;
-    }
+    const lines = await fileReadService.readStream(reader);
+    expect(lines.length).toBe(42);
+    expect(lines[1].includes('5,"Staten Island","Arden Heights","Boro Zone"')).toBeTruthy;
+    expect(lines[lines.length - 1]).toBe('45,"Manhattan","Chinatown","Yello');
   }, 12000000);
 });
