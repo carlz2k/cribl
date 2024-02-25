@@ -1,9 +1,15 @@
+import { v4 as uuidv4 } from 'uuid';
 import { FileReadService } from "./fileReadService.js";
 
 const processFile = async ({
-  partition, requestId, partitionId, fileName, start,
+  partition, requestId, partitionId, fileName, filter,
 }) => {
   const fileReadService = new FileReadService();
+
+  // trying to benchmark where the slow execution occurs
+  // seems like individual processing fo 10mb is pretty quick
+  const timeLabel = `actual file reading and processing time ${uuidv4()}`;
+  console.time(timeLabel);
 
   const reader = fileReadService.createReadStream(fileName, {
     start: partition.start,
@@ -12,10 +18,8 @@ const processFile = async ({
     requestId,
   });
 
-  const lines = (await fileReadService.readStream(reader));
-  // console.log(`${workerInfo.pid} ${partitionId} ${lines[0]}`);
-  const end = Date.now();
-  console.log(`${partitionId} duration = ${end - start} ${lines.length}`);
+  const lines = (await fileReadService.readStream(reader, filter));
+  console.timeEnd(timeLabel);
 
   return lines;
 };
@@ -26,8 +30,6 @@ export const ServiceFunctionNames = {
 
 export class ServiceLocator {
   static getServiceFunction(functionName) {
-    console.log('find function name ='+functionName);
-    console.log('find function name ='+functionName+" "+ServiceFunctionNames.processFile);
     if (functionName === ServiceFunctionNames.processFile) {
       return processFile;
     }

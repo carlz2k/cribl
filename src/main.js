@@ -9,7 +9,7 @@ import { WorkerThread } from './models/workerThread.js';
 
 export const mainFileName = fileURLToPath(import.meta.url);
 
-export const execute = async (fileName, { partitionSize = 10 * 1000000.00 }) => {
+export const execute = async (fileName, { partitionSize = 30 * 1000000.00 }) => {
   if (fileName) {
     if (isMainThread) {
       const requestId = uuidv4();
@@ -36,7 +36,7 @@ export const execute = async (fileName, { partitionSize = 10 * 1000000.00 }) => 
 
         const workerJob = workerPool.submit(
           WorkerRequest.createMessage(functionName, {
-            partition, requestId, partitionId: i, fileName, start,
+            partition, requestId, partitionId: i, fileName, start, //filter: '01/13/2020',
           }),
           (result) => {
             const partitionId = i;
@@ -55,7 +55,7 @@ export const execute = async (fileName, { partitionSize = 10 * 1000000.00 }) => 
                 }
               }
             }
-            console.log(result[result.length - 1]);
+
             console.log(`map size = ${resultMap.size}`);
           },
         );
@@ -86,6 +86,6 @@ const largeFile = '2020_Yellow_Taxi_Trip_Data.csv';
 const smallFile = 'taxi_zone_lookup.csv';
 const mediumFile = 'fhv_tripdata_2017-04.csv';
 
- execute(largeFile, {});
+execute(largeFile, {});
 //execute(smallFile, {});
 //execute(mediumFile, {});

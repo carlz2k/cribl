@@ -44,10 +44,17 @@ export class WorkerThread {
     return new Promise((resolve, reject) => {
       if (isMainThread) {
         this._createWorker(currentRequest);
+        // trying to benchmark where the slow execution occurs
+        // not sure why the actual function called by the worker is pretty fast,
+        // but the execution of the worker entirely (after worker is created til
+        // when result is returned) is really slow (ms vs s), where is the overhead?
+        const timeLabel = `total processing time  ${currentRequest?.parameters?.partitionId}`;
+        console.time(timeLabel);
         this._worker.on('message', ({
           result, error,
         }) => {
           if (result) {
+            console.timeEnd(timeLabel);
             resolve(result);
           } else if (error) {
             reject(error);
@@ -86,12 +93,5 @@ export class WorkerThread {
       },
     });
     this._ready = true;
-    this._worker.on('error', (err) => {
-      console.log(err);
-      throw err;
-    });
-    this._worker.on('exit', () => {
-      console.log(`worker ended ${Date.now()}`);
-    });
   }
 }
