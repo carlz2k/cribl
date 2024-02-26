@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { Configuration } from '../models/configuration';
 
 export const FilePartitionSize = {
   large: 20 * 1000000, // 20m
@@ -14,7 +15,7 @@ export class FilePartitioner {
     const partitions = [];
 
     if (fileName) {
-      const stats = fs.statSync(fileName);
+      const stats = fs.statSync(`${Configuration.rootDir}${fileName}`);
       const fileSizeInBytes = stats.size;
       const numberOfPartitions = Math.ceil(fileSizeInBytes / this._partitionSize);
       for (let i = 0; i < numberOfPartitions; i += 1) {

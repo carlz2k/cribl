@@ -1,11 +1,12 @@
 import fs from 'fs';
+import { Configuration } from '../models/configuration.js';
 import { StreamSplitWithReverseTransformer } from './streamSplitWithReverseTransformer.js';
 
 export class FileReadService {
   createReadStream(fileName, {
     start, end, requestId, partitionId, encoding = 'latin1',
   }, transformers) {
-    let reader = fs.createReadStream(fileName, {
+    let reader = fs.createReadStream(`${Configuration.rootDir}${fileName}`, {
       start,
       end,
       encoding,

@@ -14,14 +14,14 @@ const processFile = ({
 
   const partitions = filePartitioner.partition(fileName);
 
-  const partition = partitions[0];
+  const partition = partitions[partitions.length - 1];
 
   const fileReadService = new FileReadService();
 
   return fileReadService.createReadStreamWithTransformer(fileName, {
     start: partition.start,
     end: partition.end,
-    partitionId: 0,
+    partitionId: partitions.length - 1,
     requestId,
   });
 };
@@ -56,6 +56,7 @@ export const startServer = () => {
           count: page?.length,
           logs: page,
         });
+        console.log(object);
         stream.write(`data: ${object}\n\n`);
         page = this.read();
       }
