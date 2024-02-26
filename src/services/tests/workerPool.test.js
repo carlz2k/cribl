@@ -1,13 +1,11 @@
 import { WorkerPool } from '../workerPool';
 
 describe('workerPool', () => {
-  test('should render result', async () => {
+  test('should submit a task successfully', async () => {
     const workerPool = new WorkerPool(5);
-    workerPool.request({
-      a: 'a',
-    });
-    workerPool.request({
-      a: 'c',
-    });
+    const workerJob = workerPool.submit({
+      id: 'some req',
+    }, jest.fn());
+    expect(workerJob.id).toBeDefined();
   }, 12000000);
 });

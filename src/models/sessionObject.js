@@ -1,10 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * for managing each request 'session'
- * when each request needs to retrieve the same file
+ * for managing each request 'session'.  This is important
+ * when we use event streaming and there is no database, as we
+ * want to keep some sort of state to track multiple chained user requests.
+ *
+ * also, internally when each request needs to retrieve the same file
  * in multiple iterations, for example, reading / searching a file
- * chunk by chunk, the progression will be tracked by the id of
+ * partition by partition, the progression will be tracked by the id of
  * sessionObject
  */
 export class SessionObject {

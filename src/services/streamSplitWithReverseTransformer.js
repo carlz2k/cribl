@@ -100,9 +100,9 @@ export class StreamSplitWithReverseTransformer extends Transform {
   _flush(callback) {
     console.log('flush' + this._buffer.length);
 
-    for (const block of this._buffer) {
+    this._buffer.forEach((block) => {
       this.push(block);
-    }
+    });
 
     callback();
   }

@@ -15,9 +15,9 @@ export class FileReadService {
 
     // transformers must be in order
     if (transformers?.length) {
-      for (const transformer of transformers) {
+      transformers.forEach((transformer) => {
         reader = reader.pipe(transformer);
-      }
+      });
     }
 
     return {
@@ -34,6 +34,17 @@ export class FileReadService {
       })]);
   }
 
+  /**
+   * merge chunks into whole partition and return
+   * the entire partition back to client.
+   *
+   * because it is slow to merge
+   * large arrays, we will use this for filter scenario
+   * only because we need to merge the partitions together
+   * before passing back to the client (as the filter operation
+   * processes multiple partitions in parallel,
+   * the partitions returned would be out of order)
+   */
   async readStream(reader) {
     const streamReader = reader.reader;
 
@@ -43,7 +54,6 @@ export class FileReadService {
       streamReader.on('data', (chunk) => {
         if (chunk) {
           lines = Array.prototype.concat(lines, chunk);
-          // process chunk
         }
       });
 

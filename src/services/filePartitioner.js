@@ -6,6 +6,11 @@ export const FilePartitionSize = {
   small: 500 * 1000, // 500k
 };
 
+/**
+ * Files are divided into PARTITIONS based on the predefined partition size,
+ * and readable stream will divide the partition into CHUNKS when passing and processing
+ * data
+ */
 export class FilePartitioner {
   constructor(partitionSize) {
     this._partitionSize = partitionSize;

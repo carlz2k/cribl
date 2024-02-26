@@ -29,12 +29,21 @@ const processNextPartition = async (requestId, args) => {
 
 export const ServiceFunctionNames = {
   processFile: 'PROCESS_FILE',
+  search: 'SEARCH',
+  searchNext: 'SEARCH_NEXT',
+  filter: 'FILTER',
 };
 
 export class ServiceLocator {
-  static getServiceFunction(functionName) {
+  constructor(_logSearchService) {
+    this._logSearchService = _logSearchService;
+  }
+
+  getServiceFunction(functionName) {
     if (functionName === ServiceFunctionNames.processFile) {
       return processFile;
+    } else if (functionName === ServiceFunctionNames.search) {
+      return this._logSearchService.search;
     }
 
     return undefined;

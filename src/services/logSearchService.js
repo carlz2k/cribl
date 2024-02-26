@@ -1,37 +1,30 @@
-import { v4 as uuidv4 } from 'uuid';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
-import { SessionObject } from '../models/sessionObject';
 
 export class LogSearchService {
-  constructor(fileReadService, workerPool, sessionObjectStorage) {
+  constructor(fileReadService, sessionObjectStorage) {
     this._fileReadService = fileReadService;
-    this._workerPool = workerPool;
     this._sessionObjectStorage = sessionObjectStorage;
   }
 
   /**
-   * to search one file one chunk at a time with a smaller chunk size
+   * to search one file one partition at a time with a smaller partition size
    * because the search always starts from a fixed position and have
-   * large enough logs to return, so speed is not a huge concern, regular file scanning is enough
+   * enough number of ORDERED logs to return,
+   * so speed is not a huge concern, regular sequential file scanning is enough
    */
   search({
-    fileName,
+    fileName, onNextData, onError, onEnd,
   }) {
     const partition = this._getParition(fileName, undefined, FilePartitionSize.small);
 
     const sessionObject = this._sessionObjectStorage.add();
 
-    sessionObject.nextPartitionId = partition.id - 1;
-
-    return this._fileReadService.createReadStreamWithTransformer(fileName, {
-      start: partition.start,
-      end: partition.end,
-      partitionId: partition.id,
-      requestId: sessionObject.id,
-    });
+    this._createReader(partition, sessionObject, onNextData, onError, onEnd);
   }
 
-  searchNext(requestId) {
+  searchNext({
+    requestId, onNextData, onError, onEnd,
+  }) {
     const sessionObject = this._sessionObjectStorage.get(requestId);
 
     if (sessionObject?.partitionId) {
@@ -41,29 +34,21 @@ export class LogSearchService {
         FilePartitionSize.small,
       );
 
-      return this._fileReadService.createReadStreamWithTransformer(
-        sessionObject.fileName,
-        {
-          start: partition.start,
-          end: partition.end,
-          partitionId: partition.id,
-          requestId: sessionObject.id,
-        },
-      );
+      this._createReader(partition, sessionObject, onNextData, onError, onEnd);
     }
-
-    return undefined;
   }
 
   /**
-   * filter needs to scan through a file, so there is a
-   * performance to need to handle it efficiently,
+   * filter needs to scan the entire file, so there is a
+   * performance need to handle the scan efficiently,
    *
-   * so need to search in parallel and use bigger chunk size
-   * to improve the speed of scanning large files
+   * so the basic idea is to to scan partitions of a file in parallel
+   * and use bigger partition size to improve the speed of scanning large files.
+   * Benchmarking does show that partitioning and parallel processing
+   * do reduce the file processing time by 1-2 second for a 2gb file
    */
   async filter() {
-
+    return undefined;
   }
 
   _getParition(fileName, partitionId, partitionSize) {
@@ -82,5 +67,41 @@ export class LogSearchService {
     }
 
     return undefined;
+  }
+
+  _createReader(partition, sessionObject, onNextData, onError, onEnd) {
+    const requestId = sessionObject.id;
+
+    this._sessionObjectStorage.setToNextPartitionId(requestId);
+
+    const { reader } = this._fileReadService.createReadStreamWithTransformer(
+      sessionObject.fileName,
+      {
+        start: partition.start,
+        end: partition.end,
+        partitionId: partition.id,
+        requestId,
+      },
+    );
+
+    // TODO: move me to fileReadService when having time
+    reader.on('readable', () => {
+      let page = reader.read();
+      // use pause mode to avoid
+      // back pressure
+      while (page) {
+        const response = {
+          count: page?.length,
+          logs: page,
+          requestId,
+        };
+        onNextData(response);
+
+        page = reader.read();
+      }
+    }).on('error', onError)
+      .on('end', onEnd);
+
+    return reader;
   }
 }

@@ -1,13 +1,13 @@
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { isMainThread } from 'worker_threads';
+import Benchmark from 'benchmark';
 import { startServer } from './application/applicationServer.js';
 import { WorkerRequest } from './models/workerRequest.js';
 import { WorkerThread } from './models/workerThread.js';
 import { FilePartitionSize, FilePartitioner } from './services/filePartitioner.js';
 import { ServiceFunctionNames } from './services/serviceLocator.js';
 import { WorkerPool } from './services/workerPool.js';
-import { time } from 'console';
 
 export const mainFileName = fileURLToPath(import.meta.url);
 
@@ -107,7 +107,7 @@ const test = async () => {
 
   const numberOfPartitions = partitions.length;
 
-  let numberOfWorkers = 10;
+  let numberOfWorkers = 1;
 
   if (numberOfPartitions < numberOfWorkers) {
     numberOfWorkers = numberOfPartitions;
@@ -122,7 +122,7 @@ const test = async () => {
   const futures = [];
   let nextPartition = numberOfPartitions - 1;
 
-  for (let i = numberOfPartitions - 1; i >= 0; i -= 1) {
+  for (let i = numberOfPartitions - 1; i >= numberOfPartitions / 2; i -= 1) {
     const partition = partitions[i];
 
     const functionName = ServiceFunctionNames.processFile;
@@ -170,6 +170,31 @@ const test = async () => {
 };
 
 test();
+
+// const suite = new Benchmark.Suite();
+
+// add tests
+// suite.add('test fetch all', {
+//   setup: function() {
+//     // Set up the environment for the benchmark
+//     // This function is called before each benchmark is run
+//     // You can set the number of cycles here
+//     this.cycles = 1;
+//     this.count = 10;
+//   },
+//   fn: function() {
+//     test();
+//   }
+// }).on('cycle', function (event) {
+//   event.target.options.iterations = 10;
+//   console.log(String(event.target));
+// })
+//   .on('complete', function () {
+//     console.log('Fastest is ' + this.filter('fastest').map('name'));
+//   })
+//   // run async
+//   .run({ 'async': false });
+
 //testKoa();
 
 //execute(largeFile, {});
