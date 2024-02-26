@@ -1,7 +1,7 @@
 import { FileReadService } from '../fileReadService';
 
 describe('fileReadService', () => {
-  test('should rend all lines of a file block', async () => {
+  test('should rend all lines of a file block', async (done) => {
     const fileReadService = new FileReadService();
     const fileName = 'taxi_zone_lookup.csv';
     const reader = fileReadService.createReadStream(fileName, {
@@ -15,5 +15,6 @@ describe('fileReadService', () => {
     expect(lines.length).toBe(42);
     expect(lines[1].includes('5,"Staten Island","Arden Heights","Boro Zone"')).toBeTruthy;
     expect(lines[lines.length - 1]).toBe('45,"Manhattan","Chinatown","Yello');
+    done();
   }, 12000000);
 });

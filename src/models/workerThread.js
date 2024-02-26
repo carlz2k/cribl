@@ -40,6 +40,12 @@ export class WorkerThread {
     }
   }
 
+  async sendRequestNoThreading(currentRequest) {
+    return ServiceLocator.getServiceFunction(
+      WorkerRequest.getFunctionName(currentRequest),
+    )?.(WorkerRequest.getParamters(currentRequest));
+  }
+
   async sendRequest(currentRequest) {
     return new Promise((resolve, reject) => {
       if (isMainThread) {

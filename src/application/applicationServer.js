@@ -1,10 +1,36 @@
 import Koa from 'koa';
 import { PassThrough } from 'stream';
+import { FilePartitioner } from '../services/filePartitioner';
+import { FileReadService } from '../services/fileReadService';
+
+const processFile = ({
+  fileName, filter,
+}) => {
+  const LIMIT = 1000;
+
+  const requestId = 'som req 1';
+  const partitionSize = 1 * 1000000.00;
+  const filePartitioner = new FilePartitioner(partitionSize);
+
+  const partitions = filePartitioner.partition(fileName);
+
+  const partition = partitions[partitions.length - 1];
+
+  const fileReadService = new FileReadService();
+
+  return fileReadService.createReadStreamWithTransformer(fileName, {
+    start: partition.start,
+    end: partition.end,
+    partitionId: partitions.length - 1,
+    requestId,
+  });
+};
 
 export const startServer = () => {
   const app = new Koa();
   app.use(async (ctx, next) => {
-    if (ctx.path !== '/sse') {
+    console.log(ctx.path);
+    if (ctx.path !== '/v1/logs/stream') {
       return next();
     }
 
@@ -18,20 +44,31 @@ export const startServer = () => {
       Connection: 'keep-alive',
     });
 
+    const readStream = processFile({
+      fileName: '2020_Yellow_Taxi_Trip_Data.csv',
+    }).reader;
+
     const stream = new PassThrough();
+    let logsCount = 0;
+    
+    readStream.on('readable', function () {
+      let page = this.read();
+      while (page) {
+        const object = JSON.stringify({
+          count: page?.length,
+          logs: page,
+        });
+        stream.write(`data: ${object}\n\n`);
+        page = this.read();
+      }
+    }).on('error', (err) => ctx.onerror(err))
+      .on('end', () => {
+        if ()
+      });
 
     ctx.status = 200;
     ctx.body = stream;
 
-    setInterval(() => {
-      stream.write(`data: ${new Date()}\n\n`);
-    }, 1000);
-
     return undefined;
-  })
-    .use((ctx) => {
-      ctx.status = 200;
-      ctx.body = 'ok';
-    })
-    .listen(8080, () => console.log('Listening'));
+  }).listen(8181, () => console.log('Listening'));
 };

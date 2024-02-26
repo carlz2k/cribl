@@ -7,7 +7,8 @@ const WorkerPoolTrigger = {
 };
 
 export class WorkerPool {
-  constructor(maxPoolSize, mainFileName) {
+  constructor(maxPoolSize, mainFileName, multiThreadMode = false) {
+    this._multiThreadMode = multiThreadMode;
     // use for synchronize the worker pool
     this._mainFileName = mainFileName;
     this._eventTrigger = new EventEmitter();
@@ -53,7 +54,8 @@ export class WorkerPool {
   _assignWorker(worker) {
     this._busy.add(worker);
     const workerJob = this._pending.shift();
-    worker.sendRequest(workerJob.request).then((result) => {
+    const operation = this._multiThreadMode ? worker.sendRequest : worker.sendRequestNoThreading;
+    operation(workerJob.request).then((result) => {
       workerJob.triggerReady(result);
       this._release(worker);
     });

@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { EOL } from 'os';
 import { StreamSplitTransformer } from './streamSplitTransformer.js';
 
 export class FileReadService {
@@ -10,7 +9,7 @@ export class FileReadService {
       start,
       end,
       encoding,
-      highWaterMark: 1 * 1000000,
+      highWaterMark: 200 * 1000,
     });
 
     if (transformer) {
@@ -25,7 +24,7 @@ export class FileReadService {
   }
 
   createReadStreamWithTransformer(fileName, args) {
-    return this.createReadStream(fileName, args, new StreamSplitTransformer());
+    return this.createReadStream(fileName, args, new StreamSplitTransformer({}));
   }
 
   async readStream(reader, filter) {
@@ -34,24 +33,9 @@ export class FileReadService {
     const result = await new Promise((resolve, reject) => {
       const lines = [];
 
-      streamReader.on('data', (chunk) => {
-        try {
-          if (chunk) {
-            const temp = chunk.split(EOL);
-            for (const line of temp) {
-              if (filter) {
-                if (line.includes(filter)) {
-                  lines.push(line);
-                }
-              } else {
-                lines.push(line);
-              }
-            }
-          }
-        } catch (err) {
-          reject(err);
-        }
-      });
+      streamReader.pipe(new StreamSplitTransformer({
+        filter,
+      }));
 
       reader.reader.on('end', () => resolve(lines));
       reader.reader.on('error', (error) => {

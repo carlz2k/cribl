@@ -1,5 +1,10 @@
 import fs from 'fs';
 
+export const FilePartitionSize = {
+  large: 20 * 1000000, // 20m
+  small: 500 * 100, // 500k
+};
+
 export class FilePartitioner {
   constructor(partitionSize) {
     this._partitionSize = partitionSize;
