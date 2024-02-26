@@ -129,7 +129,7 @@ const test = async () => {
 
     const workerJob = workerPool.submit(
       WorkerRequest.createMessage(functionName, {
-        partition, requestId, partitionId: i, fileName, start: Date.now(), filter: '01/13/2020',
+        partition, requestId, partitionId: i, fileName, start: Date.now(), filter: '05',
       }),
       (result) => {
         const partitionId = i;
@@ -169,8 +169,8 @@ const test = async () => {
   }
 };
 
-//test();
-testKoa();
+test();
+//testKoa();
 
 //execute(largeFile, {});
 //execute(smallFile, {});

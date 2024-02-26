@@ -14,7 +14,7 @@ import { StringDecoder } from 'string_decoder';
  * file read function that reads each partition in the reverse order
  * would be more efficient than this.  probably can test out, but
  * current this seems to be pretty fast even on a slow machine
- * (2gb file in 3 to 4 seconds on a i5 machine with only 8gb memory)
+ * (2gb file in 3 to 4 seconds on a i5 machine, flash storage, with only 8gb memory)
  */
 export class StreamSplitWithReverseTransformer extends Transform {
   constructor(opts) {
@@ -25,7 +25,7 @@ export class StreamSplitWithReverseTransformer extends Transform {
       objectMode: true,
     });
     this._filter = opts?.filter;
-    this._pageLimit = opts?.pageLimit || 50;
+    this._pageLimit = opts?.pageLimit || 5;
     const forward = opts?.forward;
     if (forward === undefined) {
       this._forward = false;

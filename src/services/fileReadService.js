@@ -29,17 +29,20 @@ export class FileReadService {
 
   createReadStreamWithTransformer(fileName, args) {
     return this.createReadStream(fileName, args, [
-      new StreamSplitWithReverseTransformer({})]);
+      new StreamSplitWithReverseTransformer({
+        ...args,
+      })]);
   }
 
   async readStream(reader) {
     const streamReader = reader.reader;
 
     const result = await new Promise((resolve, reject) => {
-      const lines = [];
+      let lines = [];
 
       streamReader.on('data', (chunk) => {
         if (chunk) {
+          lines = Array.prototype.concat(lines, chunk);
           // process chunk
         }
       });
