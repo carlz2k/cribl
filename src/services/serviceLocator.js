@@ -1,51 +1,48 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FileReadService } from "./fileReadService.js";
-
-const processFile = async ({
-  partition, requestId, partitionId, fileName, filter,
-}) => {
-  const fileReadService = new FileReadService();
-
-  // trying to benchmark where the slow execution occurs
-  // seems like individual processing fo 10mb is pretty quick
-  const timeLabel = `actual file reading and processing time ${uuidv4()}`;
-  console.time(timeLabel);
-
-  const reader = fileReadService.createReadStreamWithTransformer(fileName, {
-    start: partition.start,
-    end: partition.end,
-    partitionId,
-    requestId,
-  });
-
-  const lines = (await fileReadService.readStream(reader, filter));
-  console.timeEnd(timeLabel);
-
-  return lines;
-};
-
-const processNextPartition = async (requestId, args) => {
-};
+import { FileReadService } from './fileReadService';
 
 export const ServiceFunctionNames = {
   processFile: 'PROCESS_FILE',
-  search: 'SEARCH',
-  searchNext: 'SEARCH_NEXT',
-  filter: 'FILTER',
+  retrieveFile: 'RETRIEVE_FILE',
+  filterFile: 'FILTER_FILE',
 };
 
+const fileReadService = new FileReadService();
+
 export class ServiceLocator {
-  constructor(_logSearchService) {
-    this._logSearchService = _logSearchService;
-  }
-
-  getServiceFunction(functionName) {
+  static executeServiceFunction(functionName, args) {
     if (functionName === ServiceFunctionNames.processFile) {
-      return processFile;
-    } else if (functionName === ServiceFunctionNames.search) {
-      return this._logSearchService.search;
+      return ServiceLocator._processFile(args);
+    } else if (functionName === ServiceFunctionNames.retrieveFile) {
+      return fileReadService.retrieve(args);
     }
-
     return undefined;
   }
+
+  static _retrieve = (args) => {
+    fileReadService.retrieve(args);
+  };
+
+  static _processFile = async ({
+    partition, requestId, partitionId, fileName, filter,
+  }) => {
+    // trying to benchmark where the slow execution occurs
+    // seems like individual processing fo 10mb is pretty quick
+    const timeLabel = `actual file reading and processing time ${uuidv4()}`;
+    console.time(timeLabel);
+
+    console.log('here:' + this + ' ' + this?._fileReadService);
+    const reader = fileReadService.createReadStreamWithTransformer(fileName, {
+      start: partition.start,
+      end: partition.end,
+      partitionId,
+      requestId,
+      filter,
+    });
+
+    const lines = (await this._fileReadService.readStream(reader, filter));
+    console.timeEnd(timeLabel);
+
+    return lines;
+  };
 }

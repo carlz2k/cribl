@@ -1,28 +1,33 @@
+import { WorkerRequest } from '../models/workerRequest';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
+import { ServiceFunctionNames } from './serviceLocator';
 
 export class LogSearchService {
-  constructor(fileReadService, sessionObjectStorage) {
-    this._fileReadService = fileReadService;
+  constructor(sessionObjectStorage, workerPool) {
     this._sessionObjectStorage = sessionObjectStorage;
+    this._workerPool = workerPool;
   }
 
   /**
-   * to search one file one partition at a time with a smaller partition size
+   * to retrieve one file one partition at a time with a smaller partition size
    * because the search always starts from a fixed position and have
    * enough number of ORDERED logs to return,
    * so speed is not a huge concern, regular sequential file scanning is enough
    */
-  search({
+  retrieve({
     fileName, onNextData, onError, onEnd,
   }) {
     const partition = this._getParition(fileName, undefined, FilePartitionSize.small);
 
-    const sessionObject = this._sessionObjectStorage.add();
+    const sessionObject = this._sessionObjectStorage.add({
+      partition,
+      fileName,
+    });
 
-    this._createReader(partition, sessionObject, onNextData, onError, onEnd);
+    this._submitRetrieveRequest(partition, sessionObject, onNextData, onError, onEnd);
   }
 
-  searchNext({
+  retrieveNext({
     requestId, onNextData, onError, onEnd,
   }) {
     const sessionObject = this._sessionObjectStorage.get(requestId);
@@ -33,8 +38,7 @@ export class LogSearchService {
         sessionObject.partitionId,
         FilePartitionSize.small,
       );
-
-      this._createReader(partition, sessionObject, onNextData, onError, onEnd);
+      this._submitRetrieveRequest(partition, sessionObject, onNextData, onError, onEnd);
     }
   }
 
@@ -69,39 +73,15 @@ export class LogSearchService {
     return undefined;
   }
 
-  _createReader(partition, sessionObject, onNextData, onError, onEnd) {
+  _submitRetrieveRequest(partition, sessionObject, onNextData, onError, onEnd) {
     const requestId = sessionObject.id;
 
     this._sessionObjectStorage.setToNextPartitionId(requestId);
 
-    const { reader } = this._fileReadService.createReadStreamWithTransformer(
-      sessionObject.fileName,
-      {
-        start: partition.start,
-        end: partition.end,
-        partitionId: partition.id,
-        requestId,
-      },
+    this._workerPool.submit(
+      WorkerRequest.createMessage(ServiceFunctionNames.retrieveFile, {
+        partition, requestId, fileName: sessionObject.fileName, onNextData, onError, onEnd,
+      }),
     );
-
-    // TODO: move me to fileReadService when having time
-    reader.on('readable', () => {
-      let page = reader.read();
-      // use pause mode to avoid
-      // back pressure
-      while (page) {
-        const response = {
-          count: page?.length,
-          logs: page,
-          requestId,
-        };
-        onNextData(response);
-
-        page = reader.read();
-      }
-    }).on('error', onError)
-      .on('end', onEnd);
-
-    return reader;
   }
 }

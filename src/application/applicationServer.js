@@ -1,50 +1,14 @@
 import Koa from 'koa';
 import { PassThrough } from 'stream';
-import { FilePartitioner } from '../services/filePartitioner';
-import { FileReadService } from '../services/fileReadService';
-import { ServiceLocator } from '../services/serviceLocator';
-import { LogSearchService } from '../services/logSearchService';
-import { SessionObjectStorage } from '../services/sessionObjectStorage';
-import { RequestRouter } from '../services/requestRouter';
-import { create } from 'browser-sync';
+import { createLogSearchService } from '../services/servicesFactory';
 
 const API = {
   logsStream: '/v1/logs/stream',
 };
 
-const createServiceLocator = () => {
-  const sessionObjectStorage = new SessionObjectStorage();
-  const fileReadService = new FileReadService();
-  const logSearchService = new LogSearchService(fileReadService, sessionObjectStorage);
-  return new ServiceLocator(logSearchService);
-};
+const logRetrieveHandler = (ctx, logSearchService) => {
+  const stream = new PassThrough();
 
-const createRequestRouter = () => new RequestRouter();
-
-const processFile = ({
-  fileName, filter,
-}) => {
-  const LIMIT = 1000;
-
-  const requestId = 'som req 1';
-  const partitionSize = 30 * 1000000.00;
-  const filePartitioner = new FilePartitioner(partitionSize);
-
-  const partitions = filePartitioner.partition(fileName);
-
-  const partition = partitions[partitions.length - 1];
-
-  const fileReadService = new FileReadService();
-
-  return fileReadService.createReadStreamWithTransformer(fileName, {
-    start: partition.start,
-    end: partition.end,
-    partitionId: partitions.length - 1,
-    requestId,
-  });
-};
-
-const logStreamHandler = (ctx, requestRouter) => {
   try {
     ctx.request.socket.setTimeout(0);
     ctx.req.socket.setNoDelay(true);
@@ -58,11 +22,10 @@ const logStreamHandler = (ctx, requestRouter) => {
 
     const fileName = '2020_Yellow_Taxi_Trip_Data.csv';
 
-    const stream = new PassThrough();
     ctx.body = stream;
     ctx.status = 200;
 
-    requestRouter.sendLogSearchingRequest({
+    logSearchService.retrieve({
       fileName,
       onNextData: (response) => {
         const responseString = JSON.stringify(response);
@@ -77,6 +40,8 @@ const logStreamHandler = (ctx, requestRouter) => {
     });
   } catch (error) {
     console.error('cannot handle the log search : %s', error);
+    ctx.onerror(error);
+    ctx.status = 500;
   }
 
   return undefined;
@@ -85,12 +50,11 @@ const logStreamHandler = (ctx, requestRouter) => {
 export const startServer = () => {
   const app = new Koa();
 
-  const serviceLocator = createServiceLocator();
-  const requestRouter = createRequestRouter();
+  const logSearchService = createLogSearchService();
 
   app.use(async (ctx, next) => {
     if (API.logsStream === ctx.path) {
-      logStreamHandler();
+      logRetrieveHandler(ctx, logSearchService);
     }
 
     return next();

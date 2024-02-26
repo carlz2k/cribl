@@ -2,14 +2,18 @@ import fs from 'fs';
 import { Configuration } from '../models/configuration.js';
 import { StreamSplitWithReverseTransformer } from './streamSplitWithReverseTransformer.js';
 
+/**
+ * main service for file handling, DO NOT call it directly,
+ * submit a request in workerpool instead
+ */
 export class FileReadService {
   createReadStream(fileName, {
-    start, end, requestId, partitionId, encoding = 'latin1',
+    start, end, requestId, partitionId,
   }, transformers) {
     let reader = fs.createReadStream(`${Configuration.rootDir}${fileName}`, {
       start,
       end,
-      encoding,
+      encoding: Configuration.defaultEncoding,
       highWaterMark: 200 * 1000,
     });
 
@@ -32,6 +36,40 @@ export class FileReadService {
       new StreamSplitWithReverseTransformer({
         ...args,
       })]);
+  }
+
+  retrieve({
+    partition, requestId, onNextData, onEnd, onError, fileName,
+  }) {
+    console.log('here2:'+this+' ' +this?._fileReadService);
+    const { reader } = this.createReadStreamWithTransformer(
+      fileName,
+      {
+        start: partition.start,
+        end: partition.end,
+        partitionId: partition.id,
+        requestId,
+      },
+    );
+
+    reader.on('readable', () => {
+      let page = reader.read();
+      // use pause mode to avoid
+      // back pressure
+      while (page) {
+        const response = {
+          count: page?.length,
+          logs: page,
+          requestId,
+        };
+        onNextData(response);
+
+        page = reader.read();
+      }
+    }).on('error', onError)
+      .on('end', onEnd);
+
+    return reader;
   }
 
   /**

@@ -1,6 +1,7 @@
 import { EOL } from 'os';
 import { Transform } from 'stream';
 import { StringDecoder } from 'string_decoder';
+import { Configuration } from '../models/configuration';
 
 /**
  * this transformer first splits the chunk into individual lines
@@ -25,7 +26,10 @@ export class StreamSplitWithReverseTransformer extends Transform {
       objectMode: true,
     });
     this._filter = opts?.filter;
-    this._pageLimit = opts?.pageLimit || 5;
+    this._pageLimit = Configuration.maxLogsPerPage;
+    if (opts?.pageLimit) {
+      this._pageLimit = Math.min(opts?.pageLimit, this._pageLimit);
+    }
     const forward = opts?.forward;
     if (forward === undefined) {
       this._forward = false;
@@ -34,7 +38,7 @@ export class StreamSplitWithReverseTransformer extends Transform {
     }
 
     // probably can use some library to detect encoding
-    this._encoding = opts?.encoding || 'latin1';
+    this._encoding = opts?.encoding || Configuration.defaultEncoding;
     this._buffer = [];
   }
 
@@ -98,8 +102,6 @@ export class StreamSplitWithReverseTransformer extends Transform {
    * flush the blocks (stored in reverse order) once the entire partition was read
    */
   _flush(callback) {
-    console.log('flush' + this._buffer.length);
-
     this._buffer.forEach((block) => {
       this.push(block);
     });

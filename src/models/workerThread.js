@@ -29,7 +29,11 @@ import { WorkerRequest } from './workerRequest.js';
  * but still should serve as a good POC
  */
 export class WorkerThread {
-  constructor(mainFileName) {
+  constructor(
+    serviceLocator,
+    mainFileName,
+  ) {
+    this._serviceLocator = serviceLocator;
     this._mainFileName = mainFileName;
   }
 
@@ -41,9 +45,11 @@ export class WorkerThread {
   }
 
   async sendRequestNoThreading(currentRequest) {
-    return ServiceLocator.getServiceFunction(
+    console.log('here' + this + ' ' + this?._serviceLocator);
+    return ServiceLocator.executeServiceFunction(
       WorkerRequest.getFunctionName(currentRequest),
-    )?.(WorkerRequest.getParamters(currentRequest));
+      WorkerRequest.getParamters(currentRequest)
+    );
   }
 
   async sendRequest(currentRequest) {
@@ -78,9 +84,10 @@ export class WorkerThread {
     if (!isMainThread) {
       try {
         const currentRequest = workerData?.request;
-        const result = await ServiceLocator.getServiceFunction(
+        const result = ServiceLocator.executeServiceFunction(
           WorkerRequest.getFunctionName(currentRequest),
-        )?.(WorkerRequest.getParamters(currentRequest));
+          WorkerRequest.getParamters(currentRequest),
+        );
         parentPort.postMessage({
           result,
         });

@@ -4,4 +4,7 @@ export const Configuration = {
   // no API for ui to control the event sending rate
   logsLimitPerRequest: 10000,
   rootDir: '/var/logs/',
+  maxLogsPerPage: 100,
+  defaultEncoding: 'latin1',
+  maxWorkerPoolSize: 50,
 };

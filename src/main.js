@@ -169,7 +169,7 @@ const test = async () => {
   }
 };
 
-test();
+// test();
 
 // const suite = new Benchmark.Suite();
 
@@ -195,7 +195,7 @@ test();
 //   // run async
 //   .run({ 'async': false });
 
-//testKoa();
+testKoa();
 
 //execute(largeFile, {});
 //execute(smallFile, {});

@@ -28,6 +28,7 @@ export class FilePartitioner {
           id: i,
           start: i * this._partitionSize,
           end: (i + 1) * this._partitionSize - 1,
+          size: this._partitionSize,
         });
       }
     }

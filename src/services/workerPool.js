@@ -1,16 +1,24 @@
 import EventEmitter from 'events';
-import { WorkerThread } from '../models/workerThread.js';
 import { WorkerJob } from '../models/workerJob.js';
+import { WorkerThread } from '../models/workerThread.js';
 
 /**
- * mainly for requesting
+ * a shared worker pool for handling log file search from different request.
+ * the purpose is to minimize the memory foot print and number of file descriptors opened
+ *
+ * Because all of the user requests share the same worker pool, potentially this can be the
+ * bottleneck when TPSs are high, but since in production,
+ * the log file indexing should happen in the background not on demand,
+ * so the indexing process needs to be redesigned as some daemon processes on
+ * single or multiple servers in the background for a more production ready product, then this
+ * would not be user blocking. Probably too much a few hours POC.
  */
 const WorkerPoolTrigger = {
   workerAssignment: 'WORKER_ASSIGNMENT',
 };
 
 export class WorkerPool {
-  constructor(maxPoolSize, mainFileName, multiThreadMode = false) {
+  constructor(serviceLocator, maxPoolSize, mainFileName, multiThreadMode = false) {
     this._multiThreadMode = multiThreadMode;
     // use for synchronize the worker pool
     this._mainFileName = mainFileName;
@@ -18,12 +26,14 @@ export class WorkerPool {
     this._busy = new Set();
     this._maxPoolSize = maxPoolSize;
     this._pending = [];
+    this._serviceLocator = serviceLocator;
     this._assignPendingRequestToWorker();
   }
 
   submit(req, onResultReady) {
     const workerJob = new WorkerJob(req, onResultReady);
     this._pending.push(workerJob);
+    console.log('is ready 3'+this._eventTrigger.emit);
     this._eventTrigger.emit(WorkerPoolTrigger.workerAssignment);
     return workerJob;
   }
@@ -44,10 +54,14 @@ export class WorkerPool {
   }
 
   _assignPendingRequestToWorker() {
+    console.log('is ready 4'+this._eventTrigger.on);
     this._eventTrigger.on(WorkerPoolTrigger.workerAssignment, () => {
       if (this._poolSize() < this._maxPoolSize) {
         while (this._poolSize() < this._maxPoolSize && this._pending?.length) {
-          const worker = new WorkerThread(this._mainFileName);
+          const worker = new WorkerThread(
+            this._serviceLocator,
+            this._mainFileName,
+          );
           this._assignWorker(worker);
         }
       }
@@ -57,9 +71,14 @@ export class WorkerPool {
   _assignWorker(worker) {
     this._busy.add(worker);
     const workerJob = this._pending.shift();
-    const operation = this._multiThreadMode ? worker.sendRequest : worker.sendRequestNoThreading;
-    operation(workerJob.request).then((result) => {
+    console.log('woker: ' + worker + ' ' + worker?._serviceLocator);
+    const operationPromise = this._multiThreadMode ? worker.sendRequest(
+      workerJob.request,
+    ) : worker.sendRequestNoThreading(workerJob.request);
+    operationPromise.then((result) => {
+      console.log('here111')
       workerJob.triggerReady(result);
+      console.log('here222')
       this._release(worker);
     });
   }

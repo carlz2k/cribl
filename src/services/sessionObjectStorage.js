@@ -20,8 +20,13 @@ export class SessionObjectStorage {
     return this._map.get(id);
   }
 
-  add() {
+  add({
+    partition, fileName,
+  }) {
     const sessionObject = new SessionObject();
+    sessionObject.partitionId = partition?.id;
+    sessionObject.partitionSize = partition?.size;
+    sessionObject.fileName = fileName;
     this._map.set(sessionObject.id, sessionObject);
     return sessionObject;
   }

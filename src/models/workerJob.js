@@ -30,11 +30,13 @@ export class WorkerJob {
   }
 
   triggerReady(result) {
+    console.log('is ready'+this._eventTrigger.emit);
     this._eventTrigger.emit(WorkerJobInternalEvent.resultReady, result);
   }
 
   _onResultReady(callback) {
     return new Promise((resolve, reject) => {
+      console.log('is ready2'+this._eventTrigger.on);
       this._eventTrigger.on(WorkerJobInternalEvent.resultReady, (result) => {
         try {
           callback(result);
