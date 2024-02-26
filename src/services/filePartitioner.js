@@ -2,7 +2,7 @@ import fs from 'fs';
 
 export const FilePartitionSize = {
   large: 20 * 1000000, // 20m
-  small: 500 * 100, // 500k
+  small: 500 * 1000, // 500k
 };
 
 export class FilePartitioner {

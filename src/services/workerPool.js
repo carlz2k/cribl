@@ -2,6 +2,9 @@ import EventEmitter from 'events';
 import { WorkerThread } from '../models/workerThread.js';
 import { WorkerJob } from '../models/workerJob.js';
 
+/**
+ * mainly for requesting
+ */
 const WorkerPoolTrigger = {
   workerAssignment: 'WORKER_ASSIGNMENT',
 };

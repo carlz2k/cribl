@@ -9,19 +9,19 @@ const processFile = ({
   const LIMIT = 1000;
 
   const requestId = 'som req 1';
-  const partitionSize = 1 * 1000000.00;
+  const partitionSize = 30 * 1000000.00;
   const filePartitioner = new FilePartitioner(partitionSize);
 
   const partitions = filePartitioner.partition(fileName);
 
-  const partition = partitions[partitions.length - 1];
+  const partition = partitions[0];
 
   const fileReadService = new FileReadService();
 
   return fileReadService.createReadStreamWithTransformer(fileName, {
     start: partition.start,
     end: partition.end,
-    partitionId: partitions.length - 1,
+    partitionId: 0,
     requestId,
   });
 };
@@ -29,7 +29,6 @@ const processFile = ({
 export const startServer = () => {
   const app = new Koa();
   app.use(async (ctx, next) => {
-    console.log(ctx.path);
     if (ctx.path !== '/v1/logs/stream') {
       return next();
     }
@@ -49,8 +48,7 @@ export const startServer = () => {
     }).reader;
 
     const stream = new PassThrough();
-    let logsCount = 0;
-    
+
     readStream.on('readable', function () {
       let page = this.read();
       while (page) {
@@ -63,7 +61,6 @@ export const startServer = () => {
       }
     }).on('error', (err) => ctx.onerror(err))
       .on('end', () => {
-        if ()
       });
 
     ctx.status = 200;

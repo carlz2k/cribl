@@ -7,10 +7,11 @@ import { WorkerThread } from './models/workerThread.js';
 import { FilePartitionSize, FilePartitioner } from './services/filePartitioner.js';
 import { ServiceFunctionNames } from './services/serviceLocator.js';
 import { WorkerPool } from './services/workerPool.js';
+import { time } from 'console';
 
 export const mainFileName = fileURLToPath(import.meta.url);
 
-export const execute = async (fileName, { partitionSize = FilePartitionSize.large }) => {
+export const execute = async (fileName, { partitionSize = FilePartitionSize.small }) => {
   if (fileName) {
     if (isMainThread) {
       const requestId = uuidv4();
@@ -112,21 +113,23 @@ const test = async () => {
     numberOfWorkers = numberOfPartitions;
   }
 
-  let start = Date.now();
+  const timeLabel = 'test benchmark';
+
+  console.time(timeLabel);
 
   const workerPool = new WorkerPool(numberOfWorkers, mainFileName);
   const resultMap = new Map();
   const futures = [];
   let nextPartition = numberOfPartitions - 1;
 
-  for (let i = numberOfPartitions - 1; i >= numberOfPartitions - 100; i -= 1) {
+  for (let i = numberOfPartitions - 1; i >= 0; i -= 1) {
     const partition = partitions[i];
 
     const functionName = ServiceFunctionNames.processFile;
 
     const workerJob = workerPool.submit(
       WorkerRequest.createMessage(functionName, {
-        partition, requestId, partitionId: i, fileName, start, filter: '01/13/2020',
+        partition, requestId, partitionId: i, fileName, start: Date.now(), filter: '01/13/2020',
       }),
       (result) => {
         const partitionId = i;
@@ -154,11 +157,11 @@ const test = async () => {
   }
 
   try {
-    console.log('total ' + futures?.length + ' requests');
-
     const result = await Promise.all(futures);
 
-    console.log('all resolved?? ' + result?.length + ' ' + (Date.now() - start));
+    console.log('total ' + result?.length + ' requests');
+
+    console.timeEnd(timeLabel);
 
     return result;
   } catch (error) {

@@ -2,7 +2,7 @@ import { FilePartitioner } from '../services/filePartitioner';
 import { FileReadService } from '../services/fileReadService';
 
 describe('main', () => {
-  const partitionSize = 50 * 1000000.00;
+  const partitionSize = 500 * 1000;
   const filePartitioner = new FilePartitioner(partitionSize);
   const fileReadService = new FileReadService();
 
@@ -13,11 +13,11 @@ describe('main', () => {
     const readerList = [];
     const numberOfPartitions = partitions.length;
 
-    const numberOfWorkers = 5;
+    const numberOfWorkers = 1;
 
     for (let i = numberOfPartitions - 1; i > numberOfPartitions - 1 - numberOfWorkers; i -= 1) {
       const partition = partitions[i];
-      const reader = fileReadService.createReadStream(fileName, {
+      const reader = fileReadService.createReadStreamWithTransformer(fileName, {
         start: partition.start,
         end: partition.end,
         requestId: 'req1',

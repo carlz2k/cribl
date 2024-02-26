@@ -1,10 +1,10 @@
 import fs from 'fs';
-import { StreamSplitTransformer } from './streamSplitTransformer.js';
+import { StreamSplitWithReverseTransformer } from './streamSplitWithReverseTransformer.js';
 
 export class FileReadService {
   createReadStream(fileName, {
     start, end, requestId, partitionId, encoding = 'latin1',
-  }, transformer) {
+  }, transformers) {
     let reader = fs.createReadStream(fileName, {
       start,
       end,
@@ -12,8 +12,11 @@ export class FileReadService {
       highWaterMark: 200 * 1000,
     });
 
-    if (transformer) {
-      reader = reader.pipe(transformer);
+    // transformers must be in order
+    if (transformers?.length) {
+      for (const transformer of transformers) {
+        reader = reader.pipe(transformer);
+      }
     }
 
     return {
@@ -24,18 +27,21 @@ export class FileReadService {
   }
 
   createReadStreamWithTransformer(fileName, args) {
-    return this.createReadStream(fileName, args, new StreamSplitTransformer({}));
+    return this.createReadStream(fileName, args, [
+      new StreamSplitWithReverseTransformer({})]);
   }
 
-  async readStream(reader, filter) {
+  async readStream(reader) {
     const streamReader = reader.reader;
 
     const result = await new Promise((resolve, reject) => {
       const lines = [];
 
-      streamReader.pipe(new StreamSplitTransformer({
-        filter,
-      }));
+      streamReader.on('data', (chunk) => {
+        if (chunk) {
+          // process chunk
+        }
+      });
 
       reader.reader.on('end', () => resolve(lines));
       reader.reader.on('error', (error) => {

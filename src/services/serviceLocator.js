@@ -11,7 +11,7 @@ const processFile = async ({
   const timeLabel = `actual file reading and processing time ${uuidv4()}`;
   console.time(timeLabel);
 
-  const reader = fileReadService.createReadStream(fileName, {
+  const reader = fileReadService.createReadStreamWithTransformer(fileName, {
     start: partition.start,
     end: partition.end,
     partitionId,
@@ -22,6 +22,9 @@ const processFile = async ({
   console.timeEnd(timeLabel);
 
   return lines;
+};
+
+const processNextPartition = async (requestId, args) => {
 };
 
 export const ServiceFunctionNames = {
