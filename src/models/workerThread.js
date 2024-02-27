@@ -1,8 +1,8 @@
 import {
   isMainThread, parentPort, Worker, workerData,
 } from 'worker_threads';
-import { ServiceLocator } from '../services/serviceLocator.js';
 import { WorkerRequest } from './workerRequest.js';
+import { serviceExecutor } from '../services/serviceExecutor.js';
 
 /**
  * POC for preprocessing a large file in parellel
@@ -45,10 +45,9 @@ export class WorkerThread {
   }
 
   async sendRequestNoThreading(currentRequest) {
-    console.log('here' + this + ' ' + this?._serviceLocator);
-    return ServiceLocator.executeServiceFunction(
+    return serviceExecutor.executeServiceFunction(
       WorkerRequest.getFunctionName(currentRequest),
-      WorkerRequest.getParamters(currentRequest)
+      WorkerRequest.getParamters(currentRequest),
     );
   }
 
@@ -84,7 +83,7 @@ export class WorkerThread {
     if (!isMainThread) {
       try {
         const currentRequest = workerData?.request;
-        const result = ServiceLocator.executeServiceFunction(
+        const result = serviceExecutor.executeServiceFunction(
           WorkerRequest.getFunctionName(currentRequest),
           WorkerRequest.getParamters(currentRequest),
         );

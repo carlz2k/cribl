@@ -6,7 +6,7 @@ import { startServer } from './application/applicationServer.js';
 import { WorkerRequest } from './models/workerRequest.js';
 import { WorkerThread } from './models/workerThread.js';
 import { FilePartitionSize, FilePartitioner } from './services/filePartitioner.js';
-import { ServiceFunctionNames } from './services/serviceLocator.js';
+import { ServiceFunctionNames } from './services/serviceExecutor.js';
 import { WorkerPool } from './services/workerPool.js';
 
 export const mainFileName = fileURLToPath(import.meta.url);

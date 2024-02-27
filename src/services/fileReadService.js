@@ -41,7 +41,6 @@ export class FileReadService {
   retrieve({
     partition, requestId, onNextData, onEnd, onError, fileName,
   }) {
-    console.log('here2:'+this+' ' +this?._fileReadService);
     const { reader } = this.createReadStreamWithTransformer(
       fileName,
       {

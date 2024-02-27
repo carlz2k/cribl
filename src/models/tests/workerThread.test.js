@@ -1,12 +1,11 @@
-import { ServiceFunctionNames, ServiceLocator } from "../../services/serviceLocator";
+import { ServiceFunctionNames, serviceExecutor } from "../../services/serviceExecutor";
 import { WorkerRequest } from "../workerRequest";
 import { WorkerThread } from "../workerThread";
 
 describe('workerThread', () => {
   test('should send a sync request', () => {
-    const serviceLocator = new ServiceLocator();
-    const spyExecuteServiceFunction = jest.spyOn(ServiceLocator, 'executeServiceFunction');
-    const workerThread = new WorkerThread(serviceLocator, 5);
+    const spyExecuteServiceFunction = jest.spyOn(serviceExecutor, 'executeServiceFunction');
+    const workerThread = new WorkerThread(serviceExecutor, 5);
     workerThread.sendRequestNoThreading(new WorkerRequest(ServiceFunctionNames.retrieveFile, {
       fileName: 'abc',
     }));

@@ -33,7 +33,6 @@ export class WorkerPool {
   submit(req, onResultReady) {
     const workerJob = new WorkerJob(req, onResultReady);
     this._pending.push(workerJob);
-    console.log('is ready 3'+this._eventTrigger.emit);
     this._eventTrigger.emit(WorkerPoolTrigger.workerAssignment);
     return workerJob;
   }
@@ -54,7 +53,6 @@ export class WorkerPool {
   }
 
   _assignPendingRequestToWorker() {
-    console.log('is ready 4'+this._eventTrigger.on);
     this._eventTrigger.on(WorkerPoolTrigger.workerAssignment, () => {
       if (this._poolSize() < this._maxPoolSize) {
         while (this._poolSize() < this._maxPoolSize && this._pending?.length) {
@@ -71,14 +69,11 @@ export class WorkerPool {
   _assignWorker(worker) {
     this._busy.add(worker);
     const workerJob = this._pending.shift();
-    console.log('woker: ' + worker + ' ' + worker?._serviceLocator);
     const operationPromise = this._multiThreadMode ? worker.sendRequest(
       workerJob.request,
     ) : worker.sendRequestNoThreading(workerJob.request);
     operationPromise.then((result) => {
-      console.log('here111')
       workerJob.triggerReady(result);
-      console.log('here222')
       this._release(worker);
     });
   }

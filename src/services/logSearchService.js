@@ -1,6 +1,6 @@
 import { WorkerRequest } from '../models/workerRequest';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
-import { ServiceFunctionNames } from './serviceLocator';
+import { ServiceFunctionNames } from './serviceExecutor';
 
 export class LogSearchService {
   constructor(sessionObjectStorage, workerPool) {
@@ -78,10 +78,8 @@ export class LogSearchService {
 
     this._sessionObjectStorage.setToNextPartitionId(requestId);
 
-    this._workerPool.submit(
-      WorkerRequest.createMessage(ServiceFunctionNames.retrieveFile, {
-        partition, requestId, fileName: sessionObject.fileName, onNextData, onError, onEnd,
-      }),
-    );
+    this._workerPool.submit(WorkerRequest.createMessage(ServiceFunctionNames.retrieveFile, {
+      partition, requestId, fileName: sessionObject.fileName, onNextData, onError, onEnd,
+    }), () => { });
   }
 }

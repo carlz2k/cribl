@@ -7,23 +7,21 @@ export const ServiceFunctionNames = {
   filterFile: 'FILTER_FILE',
 };
 
-const fileReadService = new FileReadService();
+export class ServiceExecutor {
+  constructor(fileReadService) {
+    this._fileReadService = fileReadService;
+  }
 
-export class ServiceLocator {
-  static executeServiceFunction(functionName, args) {
+  executeServiceFunction(functionName, args) {
     if (functionName === ServiceFunctionNames.processFile) {
-      return ServiceLocator._processFile(args);
+      return this._processFile(args);
     } else if (functionName === ServiceFunctionNames.retrieveFile) {
-      return fileReadService.retrieve(args);
+      return this._fileReadService.retrieve(args);
     }
     return undefined;
   }
 
-  static _retrieve = (args) => {
-    fileReadService.retrieve(args);
-  };
-
-  static _processFile = async ({
+  _processFile = async ({
     partition, requestId, partitionId, fileName, filter,
   }) => {
     // trying to benchmark where the slow execution occurs
@@ -31,8 +29,7 @@ export class ServiceLocator {
     const timeLabel = `actual file reading and processing time ${uuidv4()}`;
     console.time(timeLabel);
 
-    console.log('here:' + this + ' ' + this?._fileReadService);
-    const reader = fileReadService.createReadStreamWithTransformer(fileName, {
+    const reader = this._fileReadService.createReadStreamWithTransformer(fileName, {
       start: partition.start,
       end: partition.end,
       partitionId,
@@ -46,3 +43,7 @@ export class ServiceLocator {
     return lines;
   };
 }
+
+// use a global variable so that Worker Thread can use as it is
+// shared between main thread and worker threads
+export const serviceExecutor = new ServiceExecutor(new FileReadService());
