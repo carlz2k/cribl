@@ -1,8 +1,18 @@
+import fs from 'fs';
 import { Configuration } from '../models/configuration';
 import { ParallelPartitionProcessingQueue } from '../models/parallelPartitionProcessingQueue';
 import { WorkerRequest } from '../models/workerRequest';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
 import { ServiceFunctionNames } from './serviceExecutor';
+
+const validator = {
+  validateFileName: (fileName) => {
+    const fullFileName = `${Configuration.rootDir}${fileName}`;
+    if (!fs.existsSync(fullFileName)) {
+      throw new Error(`cannot open file ${fullFileName}`);
+    }
+  },
+};
 
 export class LogSearchService {
   constructor(sessionObjectStorage, workerPool) {
@@ -16,9 +26,11 @@ export class LogSearchService {
    * enough number of ORDERED logs to return,
    * so speed is not a huge concern, regular sequential file scanning is enough
    */
-  retrieve({
+  async retrieve({
     fileName, onNextData, onError, onEnd,
   }) {
+    validator.validateFileName(fileName);
+
     const partition = this._getParition(fileName, undefined, FilePartitionSize.small);
 
     const sessionObject = this._sessionObjectStorage.add({
@@ -29,7 +41,7 @@ export class LogSearchService {
     this._submitRetrieveRequest(partition, sessionObject, onNextData, onError, onEnd);
   }
 
-  retrieveNext({
+  async retrieveNext({
     requestId, onNextData, onError, onEnd,
   }) {
     const sessionObject = this._sessionObjectStorage.get(requestId);
@@ -54,8 +66,10 @@ export class LogSearchService {
    * do reduce the file processing time by 1-2 second for a 2gb file
    */
   async filter({
-    fileName, filter, onNextData, limit,
+    fileName, filter, onNextData, limit, onEnd,
   }) {
+    validator.validateFileName(fileName);
+
     const partitions = this._getAllParitions(fileName, FilePartitionSize.large);
 
     const startingPoint = partitions.length - 1;
@@ -67,12 +81,17 @@ export class LogSearchService {
       fileName,
     });
 
+    const requestId = sessionObject.id;
+
     // make sure the partitions are dispatched in order
     const parallelPartitionProcessingQueue = new ParallelPartitionProcessingQueue(
       startingPoint,
       this._workerPool,
       Configuration.maxWorkersForFilter,
       limit,
+      () => {
+        onEnd({ requestId });
+      },
     );
 
     // use only a portion of the total worker pool for each request to
@@ -82,7 +101,7 @@ export class LogSearchService {
 
       numberOfPartitonsRemaining -= 1;
       parallelPartitionProcessingQueue.submit({
-        fileName, filter, onNextData, partition, requestId: sessionObject.id,
+        fileName, filter, onNextData, partition, requestId,
       });
     }
     // return a promise when everything is processed (or hit the limit)

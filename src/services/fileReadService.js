@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { Configuration } from '../models/configuration.js';
-import { StreamSplitWithReverseTransformer } from './streamSplitWithReverseTransformer.js';
+import { StreamSplitWithReverseTransformer } from './transformers/streamSplitWithReverseTransformer.js';
 
 /**
  * main service for file handling, DO NOT call it directly,
@@ -10,7 +10,8 @@ export class FileReadService {
   createReadStream(fileName, {
     start, end, requestId, partitionId,
   }, transformers) {
-    let reader = fs.createReadStream(`${Configuration.rootDir}${fileName}`, {
+    const fullFileName = `${Configuration.rootDir}${fileName}`;
+    let reader = fs.createReadStream(fullFileName, {
       start,
       end,
       encoding: Configuration.defaultEncoding,

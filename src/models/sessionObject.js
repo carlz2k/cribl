@@ -22,12 +22,12 @@ export class SessionObject {
   /**
    * number of logs retrieved so far
    */
-  get logCount() {
-    return this._logCount;
+  get logsCount() {
+    return this._logsCount || 0;
   }
 
-  set logCount(count) {
-    this._logCount = count;
+  set logsCount(count) {
+    this._logsCount = count;
   }
 
   get nextPartitionId() {

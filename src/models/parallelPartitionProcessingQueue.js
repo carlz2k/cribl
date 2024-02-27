@@ -16,7 +16,7 @@ const InternalPartitionProcessingEvents = {
  * the queue is synchronized
  */
 export class ParallelPartitionProcessingQueue {
-  constructor(nextPartitionToBeProcessed, workerPool, maxWorkersAllowed, logsLimit) {
+  constructor(nextPartitionToBeProcessed, workerPool, maxWorkersAllowed, logsLimit, onEnd) {
     this._nextPartitionToBeProcessed = nextPartitionToBeProcessed;
     this._temporaryResultMap = new Map();
     this._futurePartitionProcessingQueue = [];
@@ -25,21 +25,26 @@ export class ParallelPartitionProcessingQueue {
     this._workerPool = workerPool;
     this._numberOfSubmissionBeingProcessed = 0;
     this._totalNumberOfLogsRetrieved = 0;
-    this._logsLimit = logsLimit || Configuration.logsLimitPerRequest;
+    this._logsLimit = logsLimit || Configuration.totalLogsLimit;
     this._maxWorkersAllowed = maxWorkersAllowed || Configuration.maxWorkersForFilter;
     this.onPartitionProcessingSubmitted();
     this.onPartitonProcessingFinished();
     this._future = this.onEnd();
+    this._onEndCallback = onEnd;
   }
 
   finish(partitonId, result) {
-    this._temporaryResultMap.set(partitonId, result);
-    this._eventTrigger.emit(InternalPartitionProcessingEvents.partitionProcessingFinished);
+    if (!this._isFinished) {
+      this._temporaryResultMap.set(partitonId, result);
+      this._eventTrigger.emit(InternalPartitionProcessingEvents.partitionProcessingFinished);
+    }
   }
 
   submit(args) {
-    this._futurePartitionProcessingQueue.push(args);
-    this._eventTrigger.emit(InternalPartitionProcessingEvents.partitionProcessingSubmitted);
+    if (!this._isFinished) {
+      this._futurePartitionProcessingQueue.push(args);
+      this._eventTrigger.emit(InternalPartitionProcessingEvents.partitionProcessingSubmitted);
+    }
   }
 
   destroy() {
@@ -101,7 +106,7 @@ export class ParallelPartitionProcessingQueue {
       // to client next, if the partition is not ready then wait
       while (!this._isFinished
         && this._temporaryResultMap.size > 0
-        && this._totalNumberOfLogsRetrieved < Configuration.logsLimitPerRequest
+        && this._totalNumberOfLogsRetrieved < this._logsLimit
         && this._temporaryResultMap.has(this._nextPartitionToBeProcessed)) {
         const {
           onNextData,
@@ -135,6 +140,9 @@ export class ParallelPartitionProcessingQueue {
       this._eventTrigger.on(InternalPartitionProcessingEvents.allProcessed, () => {
         this._isFinished = true;
         this.destroy();
+        if (this._onEndCallback) {
+          this._onEndCallback();
+        }
         resolve('finished');
       });
     });

@@ -1,7 +1,8 @@
 import { EOL } from 'os';
 import { Transform } from 'stream';
 import { StringDecoder } from 'string_decoder';
-import { Configuration } from '../models/configuration';
+import { Configuration } from '../../models/configuration';
+import { first } from 'lodash';
 
 /**
  * this transformer first splits the chunk into individual lines
@@ -43,11 +44,68 @@ export class StreamSplitWithReverseTransformer extends Transform {
   }
 
   _transform(chunk, enc, callback) {
+    let lines = this._splitChunk(chunk);
+
+    lines = this._mergePreviousAndGetNextOverflow(lines);
+
+    lines = this._filterLines(lines);
+
+    this._orderAndBundleLinesInPage(lines);
+
+    callback(); // next can only be called once.
+  }
+
+  _splitChunk(chunk) {
     const buf = new StringDecoder(this._encoding).write(chunk);
-    let lines = buf.split(EOL);
-    if (this._filter) {
-      lines = lines.filter((line) => line.includes(this._filter));
+    return buf.split(EOL);
+  }
+
+  /**
+   * has side effect that merge the previous overflow with the first line
+   * and pop the next overflow
+   */
+  _mergePreviousAndGetNextOverflow(lines) {
+    if (lines?.length) {
+      let firstLine = lines[0];
+
+      if (firstLine && this._overflow) {
+        firstLine = this._overflow + firstLine;
+      }
+
+      if (firstLine) {
+        lines[0] = firstLine;
+      }
     }
+
+    if (lines?.length > 1) {
+      this._overflow = lines[lines.length - 1];
+    } else {
+      this._overflow = undefined;
+    }
+
+    if (this._overflow) {
+      lines.pop();
+    }
+
+    return lines;
+  }
+
+  _filterLines(lines) {
+    if (this._filter) {
+      return lines.filter((line) => this._containsFilter(line));
+    }
+
+    return lines;
+  }
+
+  /**
+   * if this._forward is false, we are going to assemble line by line
+   * last line first, and bundle all lines in to pages based on
+   * this._pageLimit, this is to help improve the efficiency of allowing
+   * a limited number of logs to be passed to clients per event to avoid
+   * too many events being sent to clients or too big payload for each event
+   */
+  _orderAndBundleLinesInPage(lines) {
     const limit = this._pageLimit;
 
     let count = 0;
@@ -78,7 +136,7 @@ export class StreamSplitWithReverseTransformer extends Transform {
 
       if (subBuffer?.length) {
         // last chunk first
-        this._buffer = subBuffer.concat(this.buffer);
+        this._buffer = subBuffer.concat(this._buffer);
       }
     } else {
       lines.forEach((line) => {
@@ -98,18 +156,32 @@ export class StreamSplitWithReverseTransformer extends Transform {
         this.push(linesGroup);
       }
     }
-
-    callback(); // next can only be called once.
   }
 
   /**
    * flush the blocks (stored in reverse order) once the entire partition was read
    */
   _flush(callback) {
+    // this._overflow is the line that is broken between chunks or partitions
+    // thus there is a need to merge the last line of the previous chunk
+    // and the first line of the next chunk
+
+    // if the overflow line (last line of the partition) exists at the end of a partition
+    // push it as a single page at the begining
+    // so that next partition can merge it
+
+    if (this._overflow && this._containsFilter(this._overflow)) {
+      this.push([this._overflow]);
+    }
+
     this._buffer.forEach((block) => {
       this.push(block);
     });
 
     callback();
+  }
+
+  _containsFilter(line) {
+    return !this._filter || line.includes(this._filter);
   }
 }

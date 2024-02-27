@@ -157,6 +157,7 @@ const test = async () => {
   }
 
   try {
+    console.log('before wait');
     const result = await Promise.all(futures);
 
     console.log('total ' + result?.length + ' requests');

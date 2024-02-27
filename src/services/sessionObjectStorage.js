@@ -13,7 +13,9 @@ import { SessionObject } from '../models/sessionObject';
  */
 export class SessionObjectStorage {
   constructor() {
-    this._map = lru(30000, 10 * 60 * 1000);
+    const maxRecords = 30000;
+    const ttl = 10 * 60 * 1000;
+    this._map = lru(maxRecords, ttl);
   }
 
   get(id) {

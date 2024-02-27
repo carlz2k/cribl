@@ -3,6 +3,7 @@ import { LogSearchService } from './logSearchService';
 import { RequestHandler } from './requestHandler';
 import { serviceExecutor } from './serviceExecutor';
 import { SessionObjectStorage } from './sessionObjectStorage';
+import { ResponseTransformer } from './transformers/responseTransformer';
 import { WorkerPool } from './workerPool';
 
 export const createRequestHandler = () => {
@@ -10,10 +11,14 @@ export const createRequestHandler = () => {
     serviceExecutor,
     Configuration.maxWorkerPoolSize,
   );
+  const sessionObjectStorage = new SessionObjectStorage();
+
   return new RequestHandler(
     new LogSearchService(
-      new SessionObjectStorage(),
+      sessionObjectStorage,
       workerPool,
     ),
+    sessionObjectStorage,
+    new ResponseTransformer(),
   );
 };
