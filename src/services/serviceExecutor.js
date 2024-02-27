@@ -12,11 +12,13 @@ export class ServiceExecutor {
     this._fileReadService = fileReadService;
   }
 
-  executeServiceFunction(functionName, args) {
+  async executeServiceFunction(functionName, args) {
     if (functionName === ServiceFunctionNames.processFile) {
       return this._processFile(args);
     } else if (functionName === ServiceFunctionNames.retrieveFile) {
       return this._fileReadService.retrieve(args);
+    } else if (functionName === ServiceFunctionNames.filterFile) {
+      return this._fileReadService.retrieveEntirePartitionWithFilter(args);
     }
     return undefined;
   }

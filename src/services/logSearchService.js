@@ -1,3 +1,4 @@
+import { ParallelPartitionProcessingQueue } from '../models/parallelPartitionProcessingQueue';
 import { WorkerRequest } from '../models/workerRequest';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
 import { ServiceFunctionNames } from './serviceExecutor';
@@ -51,13 +52,48 @@ export class LogSearchService {
    * Benchmarking does show that partitioning and parallel processing
    * do reduce the file processing time by 1-2 second for a 2gb file
    */
-  async filter() {
-    return undefined;
+  async filter({
+    fileName, filter, onNextData,
+  }) {
+    const partitions = this._getAllParitions(fileName, FilePartitionSize.large);
+
+    const startingPoint = partitions.length - 1;
+
+    let numberOfPartitonsRemaining = partitions.length;
+
+    const sessionObject = this._sessionObjectStorage.add({
+      partition: partitions[startingPoint],
+      fileName,
+    });
+
+    // make sure the partitions are dispatched in order
+    const parallelPartitionProcessingQueue = new ParallelPartitionProcessingQueue(
+      startingPoint,
+      this._workerPool,
+    );
+
+    // use only a portion of the total worker pool for each request to
+    // prevent resource starvation
+    while (numberOfPartitonsRemaining > 0) {
+      const partition = partitions[numberOfPartitonsRemaining - 1];
+
+      numberOfPartitonsRemaining -= 1;
+      parallelPartitionProcessingQueue.submit({
+        fileName, filter, onNextData, partition, requestId: sessionObject.id,
+      });
+    }
+    // return a promise when everything is processed (or hit the limit)
+    // just in case
+    return parallelPartitionProcessingQueue.future;
+  }
+
+  _getAllParitions(fileName, partitionSize) {
+    const filePartitionService = new FilePartitioner(partitionSize);
+    return filePartitionService.partition(fileName);
   }
 
   _getParition(fileName, partitionId, partitionSize) {
-    const filePartitionService = new FilePartitioner(partitionSize);
-    const partitions = filePartitionService.partition(fileName);
+    const partitions = this._getAllParitions(fileName, partitionSize);
 
     const numberOfPartitions = partitions.length;
 

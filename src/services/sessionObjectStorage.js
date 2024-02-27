@@ -22,7 +22,7 @@ export class SessionObjectStorage {
 
   add({
     partition, fileName,
-  }) {
+  } = {}) {
     const sessionObject = new SessionObject();
     sessionObject.partitionId = partition?.id;
     sessionObject.partitionSize = partition?.size;

@@ -7,4 +7,5 @@ export const Configuration = {
   maxLogsPerPage: 100,
   defaultEncoding: 'latin1',
   maxWorkerPoolSize: 50,
+  maxWorkersForFilter: 5,
 };

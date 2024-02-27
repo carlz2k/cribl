@@ -82,20 +82,34 @@ export class FileReadService {
    * processes multiple partitions in parallel,
    * the partitions returned would be out of order)
    */
-  async readStream(reader) {
-    const streamReader = reader.reader;
+  async retrieveEntirePartitionWithFilter({
+    partition, requestId, fileName, filter,
+  }) {
+    const { reader } = this.createReadStreamWithTransformer(
+      fileName,
+      {
+        start: partition.start,
+        end: partition.end,
+        partitionId: partition.id,
+        requestId,
+        filter,
+      },
+    );
 
     const result = await new Promise((resolve, reject) => {
-      let lines = [];
+      const lines = [];
 
-      streamReader.on('data', (chunk) => {
-        if (chunk) {
-          lines = Array.prototype.concat(lines, chunk);
+      // flow mode, retrieve all
+      reader.on('data', (chunk) => {
+        if (chunk?.length) {
+          lines.push(chunk);
         }
       });
 
-      reader.reader.on('end', () => resolve(lines));
-      reader.reader.on('error', (error) => {
+      reader.on('end', () => {
+        resolve(lines);
+      });
+      reader.on('error', (error) => {
         reject(error);
       });
     });

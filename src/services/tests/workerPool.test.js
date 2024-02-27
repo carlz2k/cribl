@@ -7,5 +7,5 @@ describe('workerPool', () => {
       id: 'some req',
     }, jest.fn());
     expect(workerJob.id).toBeDefined();
-  }, 12000000);
+  });
 });

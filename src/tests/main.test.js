@@ -36,5 +36,5 @@ describe('main', () => {
       expect(lines.length).toBeTruthy;
       expect(lines[lines.length - 1]).toBeTruthy;
     }
-  }, 12000000);
+  }, 5000);
 });

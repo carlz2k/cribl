@@ -8,5 +8,5 @@ describe('sessionObjectStorage', () => {
     const sessionObjectFound = sessionObjectStorage.get(sessionObject.id);
     expect(sessionObjectFound.id).toBeDefined();
     expect(sessionObjectFound).toEqual(sessionObject);
-  }, 12000000);
+  });
 });

@@ -83,7 +83,7 @@ export class WorkerThread {
     if (!isMainThread) {
       try {
         const currentRequest = workerData?.request;
-        const result = serviceExecutor.executeServiceFunction(
+        const result = await serviceExecutor.executeServiceFunction(
           WorkerRequest.getFunctionName(currentRequest),
           WorkerRequest.getParamters(currentRequest),
         );

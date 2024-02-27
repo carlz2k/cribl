@@ -2,7 +2,7 @@ import fs from 'fs';
 import { Configuration } from '../models/configuration';
 
 export const FilePartitionSize = {
-  large: 20 * 1000000, // 20m
+  large: 10 * 1000000, // 20m
   small: 500 * 1000, // 500k
 };
 

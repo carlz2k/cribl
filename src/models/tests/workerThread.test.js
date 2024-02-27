@@ -10,5 +10,5 @@ describe('workerThread', () => {
       fileName: 'abc',
     }));
     expect(spyExecuteServiceFunction).toHaveBeenCalled();
-  }, 12000000);
+  });
 });
