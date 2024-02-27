@@ -60,13 +60,15 @@ export class StreamSplitWithReverseTransformer extends Transform {
       // assemble backwards
       for (let i = lines.length - 1; i >= 0; i -= 1) {
         const line = lines[i];
-        if (count < limit) {
-          linesGroup.push(line);
-          count += 1;
-        } else {
-          subBuffer.push(linesGroup);
-          linesGroup = [];
-          count = 0;
+        if (line) {
+          if (count < limit) {
+            linesGroup.push(line);
+            count += 1;
+          } else {
+            subBuffer.push(linesGroup);
+            linesGroup = [];
+            count = 0;
+          }
         }
       }
 
@@ -79,16 +81,18 @@ export class StreamSplitWithReverseTransformer extends Transform {
         this._buffer = subBuffer.concat(this.buffer);
       }
     } else {
-      for (const line of lines) {
-        if (count < limit) {
-          linesGroup.push(line);
-          count += 1;
-        } else {
-          this.push(linesGroup);
-          linesGroup = [];
-          count = 0;
+      lines.forEach((line) => {
+        if (line) {
+          if (count < limit) {
+            linesGroup.push(line);
+            count += 1;
+          } else {
+            this.push(linesGroup);
+            linesGroup = [];
+            count = 0;
+          }
         }
-      }
+      });
 
       if (linesGroup?.length) {
         this.push(linesGroup);

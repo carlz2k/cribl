@@ -1,3 +1,4 @@
+import { Configuration } from '../models/configuration';
 import { ParallelPartitionProcessingQueue } from '../models/parallelPartitionProcessingQueue';
 import { WorkerRequest } from '../models/workerRequest';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
@@ -53,7 +54,7 @@ export class LogSearchService {
    * do reduce the file processing time by 1-2 second for a 2gb file
    */
   async filter({
-    fileName, filter, onNextData,
+    fileName, filter, onNextData, limit,
   }) {
     const partitions = this._getAllParitions(fileName, FilePartitionSize.large);
 
@@ -70,6 +71,8 @@ export class LogSearchService {
     const parallelPartitionProcessingQueue = new ParallelPartitionProcessingQueue(
       startingPoint,
       this._workerPool,
+      Configuration.maxWorkersForFilter,
+      limit,
     );
 
     // use only a portion of the total worker pool for each request to
