@@ -46,11 +46,11 @@ export class LogSearchService {
   }) {
     const sessionObject = this._sessionObjectStorage.get(requestId);
 
-    if (sessionObject?.partitionId) {
+    if (sessionObject?.nextPartitionId) {
       const partition = this._getParition(
         sessionObject.fileName,
-        sessionObject.partitionId,
-        FilePartitionSize.small,
+        sessionObject.nextPartitionId,
+        sessionObject.partitionSize,
       );
       this._submitRetrieveRequest(partition, sessionObject, onNextData, onError, onEnd);
     }

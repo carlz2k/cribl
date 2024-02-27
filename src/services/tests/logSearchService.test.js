@@ -35,6 +35,7 @@ describe('logSearchService', () => {
         expect(nextPartitionId === result.partitionId);
         nextPartitionId -= 1;
       },
+      onEnd: () => undefined,
     });
 
     expect(nextPartitionId).toBe(-1);

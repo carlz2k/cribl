@@ -26,11 +26,17 @@ describe('requestHandler', () => {
   });
 
   test('should write error message if file name is empty', async () => {
+    const stream = {
+      write: jest.fn(),
+    };
+
     const requestHandler = new RequestHandler({
       retrieve: jest.fn(),
     }, {
       update: jest.fn(), get: jest.fn(),
-    }, new ResponseTransformer());
+    }, new ResponseTransformer(), {
+      newStream: () => stream,
+    });
 
     const ctx = {
       onerror: jest.fn(),
@@ -47,12 +53,57 @@ describe('requestHandler', () => {
       set: jest.fn(),
     };
 
+    await requestHandler.retrieveLogs(ctx, '', 500);
+    expect(stream.write).toHaveBeenCalledWith('event: {"error":{"message":"\'fileName\' cannot be empty"}}\n\n');
+  });
+
+  test('should not request next if hit the lmit', async () => {
     const stream = {
       write: jest.fn(),
     };
 
-    await requestHandler.retrieveLogs(ctx, stream, '', 500);
-    expect(ctx.res.end).toHaveBeenCalled();
-    expect(stream.write).toHaveBeenCalledWith('event: {"error":{"message":"\'fileName\' cannot be empty"}}\n\n');
+    const sessionObect = new SessionObject();
+    sessionObect.logsCount = 60;
+
+    const logService = {
+      retrieve: jest.fn(),
+      retrieveNext: jest.fn(),
+    };
+
+    const requestHandler = new RequestHandler(logService, {
+      update: jest.fn(), get: () => sessionObect,
+    }, new ResponseTransformer(), {
+      newStream: () => stream,
+    });
+
+    const requestId = 'reqId';
+
+    await requestHandler._retrieveNext(requestId, 50);
+    expect(logService.retrieveNext).not.toHaveBeenCalled();
+  });
+
+  test('should call request next', async () => {
+    const stream = {
+      write: jest.fn(),
+    };
+
+    const sessionObect = new SessionObject();
+    sessionObect.logsCount = 20;
+
+    const logService = {
+      retrieve: jest.fn(),
+      retrieveNext: jest.fn(),
+    };
+
+    const requestHandler = new RequestHandler(logService, {
+      update: jest.fn(), get: () => sessionObect,
+    }, new ResponseTransformer(), {
+      newStream: () => stream,
+    });
+
+    const requestId = 'reqId';
+
+    await requestHandler._retrieveNext(requestId, 50);
+    expect(logService.retrieveNext).toHaveBeenCalled();
   });
 });

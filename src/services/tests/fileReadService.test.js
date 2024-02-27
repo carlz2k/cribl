@@ -1,6 +1,17 @@
+import { Configuration } from '../../models/configuration';
 import { FileReadService } from '../fileReadService';
 
 describe('fileReadService', () => {
+  const rootDir = Configuration.rootDir;
+
+  beforeEach(() => {
+    Configuration.rootDir = '';
+  });
+
+  afterEach(() => {
+    Configuration.rootDir = rootDir;
+  });
+
   test('should read all lines of a file block with a filter', async () => {
     const fileReadService = new FileReadService();
     const fileName = 'taxi_zone_lookup.csv';

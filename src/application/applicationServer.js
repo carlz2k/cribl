@@ -1,5 +1,4 @@
 import Koa from 'koa';
-import { PassThrough } from 'stream';
 import { createRequestHandler } from '../services/servicesFactory';
 import { QueryParser } from '../services/transformers/queryParaser';
 
@@ -22,9 +21,7 @@ export const startServer = () => {
         limit, keyword, fileName,
       } = queryObject;
 
-      const stream = new PassThrough();
-
-      requestHandler.retrieveLogs(ctx, stream, fileName, limit, keyword);
+      requestHandler.retrieveLogs(ctx, fileName, limit, keyword);
     }
 
     return next();

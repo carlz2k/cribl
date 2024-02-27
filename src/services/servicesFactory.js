@@ -1,5 +1,6 @@
 import { Configuration } from '../models/configuration';
 import { LogSearchService } from './logSearchService';
+import { OutputStreamFactory } from './outputStreamFactory';
 import { RequestHandler } from './requestHandler';
 import { serviceExecutor } from './serviceExecutor';
 import { SessionObjectStorage } from './sessionObjectStorage';
@@ -20,5 +21,6 @@ export const createRequestHandler = () => {
     ),
     sessionObjectStorage,
     new ResponseTransformer(),
+    new OutputStreamFactory()
   );
 };

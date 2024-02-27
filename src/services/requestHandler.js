@@ -5,13 +5,16 @@
  * koa's ctx
  */
 export class RequestHandler {
-  constructor(logSearchService, sessionObjectStorage, responseTransformer) {
+  constructor(logSearchService, sessionObjectStorage, responseTransformer, outputStreamFactory) {
     this._logSearchService = logSearchService;
     this._sessionObjectStorage = sessionObjectStorage;
     this._responseTransformer = responseTransformer;
+    this._outputStreamFactory = outputStreamFactory;
   }
 
-  retrieveLogs(ctx, stream, fileName, limit, filter) {
+  retrieveLogs(ctx, fileName, limit, filter) {
+    const stream = this._outputStreamFactory.newStream();
+
     try {
       ctx.req.socket.setTimeout(0);
       ctx.req.socket.setNoDelay(true);
@@ -53,28 +56,68 @@ export class RequestHandler {
   }
 
   async _handleRetrieveOnly(ctx, stream, fileName, limit) {
-    this._logSearchService.retrieve({
-      fileName,
-
-      onNextData: (response) => {
-        const responseObject = this._updateResponse(response, limit);
-        if (responseObject) {
-          this._responseTransformer.writeDataObject(stream, responseObject);
-        }
-      },
-      onEnd: () => {
-      },
-      onError: (err) => {
-        console.error('cannot search log: %s %s', fileName, err);
-        ctx.onerror(err);
+    return this._retrieveFirst(stream, fileName, limit)
+      .then((requestId) => this._retrieveNext(ctx, stream, requestId, limit))
+      .catch((error) => {
+        console.error('cannot search log: %s %s', fileName, error);
+        ctx.onerror(error);
         ctx.status = 500;
-        ctx.res.end();
-      },
-    }).catch((error) => {
-      ctx.status = 500;
-      this._responseTransformer.writeErrorMessage(stream, error?.message);
-      // ctx.res.end();
+        this._responseTransformer.writeErrorMessage(stream, error?.message);
+        // ctx.res.end();
+      });
+  }
+
+  async _retrieveFirst(stream, fileName, limit) {
+    return new Promise((resolve, reject) => {
+      let requestId;
+      this._logSearchService.retrieve({
+        fileName,
+        onNextData: (response) => {
+          requestId = response?.requestId;
+          const responseObject = this._updateResponse(response, limit);
+          if (responseObject) {
+            this._responseTransformer.writeDataObject(stream, responseObject);
+          }
+        },
+        onEnd: () => {
+          resolve(requestId);
+        },
+        onError: (err) => {
+          reject(err);
+        },
+      });
     });
+  }
+
+  async _retrieveNext(ctx, stream, requestId, limit) {
+    if (requestId) {
+      const sessionObect = this._sessionObjectStorage.get(requestId);
+      if (sessionObect) {
+        const logsCount = this._getLogsCount({
+          requestId,
+        });
+        if (logsCount < limit) {
+          ctx.status = 200;
+
+          this._logSearchService.retrieveNext({
+            requestId,
+            onNextData: (response) => {
+              const responseObject = this._updateResponse(response, limit);
+              if (responseObject) {
+                this._responseTransformer.writeDataObject(stream, responseObject);
+              }
+            },
+            onEnd: () => {
+              console.log('fetch more');
+              this._retrieveNext(ctx, stream, requestId, limit);
+            },
+            onError: (err) => {
+              throw err;
+            },
+          });
+        }
+      }
+    }
   }
 
   async _handleFilter(ctx, fileName, stream, filter, limit) {

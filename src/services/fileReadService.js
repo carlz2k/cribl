@@ -67,7 +67,7 @@ export class FileReadService {
         page = reader.read();
       }
     }).on('error', onError)
-      .on('end', onEnd);
+      .on('close', onEnd);
 
     return reader;
   }

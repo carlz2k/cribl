@@ -26,7 +26,7 @@ export class SessionObjectStorage {
     partition, fileName,
   } = {}) {
     const sessionObject = new SessionObject();
-    sessionObject.partitionId = partition?.id;
+    sessionObject.nextPartitionId = partition?.id;
     sessionObject.partitionSize = partition?.size;
     sessionObject.fileName = fileName;
     this._map.set(sessionObject.id, sessionObject);
