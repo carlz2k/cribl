@@ -30,6 +30,6 @@ describe('ParallelPartitionProcessingQueue', () => {
       },
       fileName,
     });
-    expect(spyWorkerPoolSubmitFunction).toHaveBeenCalledTimes(2);
+    expect(spyWorkerPoolSubmitFunction).toHaveBeenCalledTimes(3);
   }, 5000);
 });

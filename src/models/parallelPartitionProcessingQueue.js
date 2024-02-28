@@ -10,24 +10,21 @@ const InternalPartitionProcessingEvents = {
 };
 
 /**
- * use this class if you need to handleconcurrent processing of multiple partitions of the same file
+ * this class serves like as a map reducer if you need to handle concurrent
+ * processing of multiple partitions of the same file
  * and have to process the results in order
  *
  * the queue is synchronized
  */
 export class ParallelPartitionProcessingQueue {
-  constructor(nextPartitionToBeProcessed, workerPool, maxWorkersAllowed, logsLimit, onEnd) {
+  constructor(nextPartitionToBeProcessed, workerPool, logsLimit, onEnd) {
     this._nextPartitionToBeProcessed = nextPartitionToBeProcessed;
     this._temporaryResultMap = new Map();
-    this._futurePartitionProcessingQueue = [];
     this._eventTrigger = new EventEmitter();
     this._isFinished = false;
     this._workerPool = workerPool;
-    this._numberOfSubmissionBeingProcessed = 0;
     this._totalNumberOfLogsRetrieved = 0;
     this._logsLimit = logsLimit || Configuration.totalLogsLimit;
-    this._maxWorkersAllowed = maxWorkersAllowed || Configuration.maxWorkersForFilter;
-    this.onPartitionProcessingSubmitted();
     this.onPartitonProcessingFinished();
     this._future = this.onEnd();
     this._onEndCallback = onEnd;
@@ -40,49 +37,27 @@ export class ParallelPartitionProcessingQueue {
     }
   }
 
-  submit(args) {
+  submit({
+    fileName, filter, onNextData, partition, requestId,
+  }) {
     if (!this._isFinished) {
-      this._futurePartitionProcessingQueue.push(args);
-      this._eventTrigger.emit(InternalPartitionProcessingEvents.partitionProcessingSubmitted);
+      const request = WorkerRequest.createMessage(ServiceFunctionNames.filterFile, {
+        partition, requestId, fileName, filter,
+      });
+      const onResult = (result) => {
+        this.finish(partition?.id, {
+          requestId,
+          result,
+          onNextData,
+        });
+      };
+
+      this._workerPool.submit(request, onResult);
     }
   }
 
   destroy() {
-    this._futurePartitionProcessingQueue = undefined;
     this._temporaryResultMap = undefined;
-  }
-
-  /**
-   * process _futurePartitionProcessingQueue when new ones are submitted
-   * only allows specified number of jobs running in parallel in worker pool
-   */
-  onPartitionProcessingSubmitted() {
-    this._eventTrigger.on(InternalPartitionProcessingEvents.partitionProcessingSubmitted, () => {
-      while (
-        !this._isFinished
-        && this._futurePartitionProcessingQueue?.length
-        && this._numberOfSubmissionBeingProcessed < this._maxWorkersAllowed) {
-        this._numberOfSubmissionBeingProcessed += 1;
-
-        const object = this._futurePartitionProcessingQueue.shift();
-        const {
-          fileName, filter, onNextData, partition, requestId,
-        } = object;
-
-        const request = WorkerRequest.createMessage(ServiceFunctionNames.filterFile, {
-          partition, requestId, fileName, filter,
-        });
-        const onResult = (result) => {
-          this.finish(partition?.id, {
-            requestId,
-            result,
-            onNextData,
-          });
-        };
-
-        this._workerPool.submit(request, onResult);
-      }
-    });
   }
 
   /**
@@ -93,7 +68,6 @@ export class ParallelPartitionProcessingQueue {
    */
   onPartitonProcessingFinished() {
     this._eventTrigger.on(InternalPartitionProcessingEvents.partitionProcessingFinished, () => {
-      this._numberOfSubmissionBeingProcessed -= 1;
       this._eventTrigger.emit(InternalPartitionProcessingEvents.partitionProcessingSubmitted);
 
       if (this._shouldProcessingFinish()) {

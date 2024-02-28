@@ -8,19 +8,25 @@ import { ResponseTransformer } from './transformers/responseTransformer';
 import { WorkerPool } from './workerPool';
 
 export const createRequestHandler = () => {
-  const workerPool = new WorkerPool(
+  const workerPoolForConcurrentProcessing = new WorkerPool(
     serviceExecutor,
-    Configuration.maxWorkerPoolSize,
+    Configuration.maxWorkersForFilter,
+  );
+
+  const workerPoolForSequentialProcessing = new WorkerPool(
+    serviceExecutor,
+    1,
   );
   const sessionObjectStorage = new SessionObjectStorage();
 
   return new RequestHandler(
     new LogSearchService(
       sessionObjectStorage,
-      workerPool,
+      workerPoolForConcurrentProcessing,
+      workerPoolForSequentialProcessing,
     ),
     sessionObjectStorage,
     new ResponseTransformer(),
-    new OutputStreamFactory()
+    new OutputStreamFactory(),
   );
 };

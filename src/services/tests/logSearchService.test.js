@@ -21,16 +21,20 @@ describe('logSearchService', () => {
     const sessionObjectStorage = new SessionObjectStorage();
     const logSearchService = new LogSearchService(sessionObjectStorage, workerPool);
 
-    const fileName = '1mb_file.csv';
+    const fileName = 'fhv_tripdata_2017-04.csv';
     let totalPartitionReturned = 0;
 
-    const numberOfPartitions = 1;
-    let nextPartitionId = 0;
+    const numberOfPartitions = 49;
+    let nextPartitionId = 48;
 
+    let recordFound = false;
     await logSearchService.filter({
       fileName,
-      filter: 'VendorID',
+      filter: 'DropOff_datetime',
       onNextData: (result) => {
+        if (result.logs?.length) {
+          recordFound = true;
+        }
         totalPartitionReturned += 1;
         expect(nextPartitionId === result.partitionId);
         nextPartitionId -= 1;
@@ -38,6 +42,7 @@ describe('logSearchService', () => {
       onEnd: () => undefined,
     });
 
+    expect(recordFound).toBeTruthy();
     expect(nextPartitionId).toBe(-1);
     expect(totalPartitionReturned).toBe(numberOfPartitions);
   }, 20000);

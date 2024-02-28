@@ -103,7 +103,7 @@ describe('requestHandler', () => {
 
     const requestId = 'reqId';
 
-    await requestHandler._retrieveNext(requestId, 50);
+    await requestHandler._retrieveNext({}, {}, requestId, 50);
     expect(logService.retrieveNext).toHaveBeenCalled();
   });
 });

@@ -15,9 +15,14 @@ const validator = {
 };
 
 export class LogSearchService {
-  constructor(sessionObjectStorage, workerPool) {
+  constructor(
+    sessionObjectStorage,
+    workerPoolForConcurrentProcessing,
+    workerPoolForSequentialProcessing,
+  ) {
     this._sessionObjectStorage = sessionObjectStorage;
-    this._workerPool = workerPool;
+    this._workerPoolForConcurrentProcessing = workerPoolForConcurrentProcessing;
+    this._workerPoolForSequentialProcessing = workerPoolForSequentialProcessing;
   }
 
   /**
@@ -86,7 +91,7 @@ export class LogSearchService {
     // make sure the partitions are dispatched in order
     const parallelPartitionProcessingQueue = new ParallelPartitionProcessingQueue(
       startingPoint,
-      this._workerPool,
+      this._workerPoolForConcurrentProcessing,
       Configuration.maxWorkersForFilter,
       limit,
       () => {
@@ -136,8 +141,11 @@ export class LogSearchService {
 
     this._sessionObjectStorage.setToNextPartitionId(requestId);
 
-    this._workerPool.submit(WorkerRequest.createMessage(ServiceFunctionNames.retrieveFile, {
-      partition, requestId, fileName: sessionObject.fileName, onNextData, onError, onEnd,
-    }), () => { });
+    this._workerPoolForSequentialProcessing.submit(WorkerRequest.createMessage(
+      ServiceFunctionNames.retrieveFile,
+      {
+        partition, requestId, fileName: sessionObject.fileName, onNextData, onError, onEnd,
+      },
+    ), () => { });
   }
 }
