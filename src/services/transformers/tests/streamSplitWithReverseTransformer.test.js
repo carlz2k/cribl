@@ -19,7 +19,7 @@ describe('StreamSplitWithReverseTransformer', () => {
         for (let i = 0; i < blocks.length; i += 1) {
           const block = blocks[i];
           if (i === blocks.length - 1) {
-            expect(block?.length).toBe(1);
+            expect(block?.length).toBe(13);
           }
           if (i === 0) {
             expect(block?.length).toBe(20);

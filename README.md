@@ -1,7 +1,8 @@
 # Logs Retrieval API
 
 This is an app that allows user to retrieve lines, most recent first,
-from a file in /var/log directory.
+from a file in /var/log directory.  It is developed using NodeJs and ReactJs with
+Koa used as the web framework and server.
 
 ## Features
 1) User can stream a file by specifying a file name
