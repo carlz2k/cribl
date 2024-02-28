@@ -24,7 +24,6 @@ export const LogStreamingView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [fileName, setFileName] = useState('taxi_zone_lookup.csv');
   const [keyword, setKeyword] = useState('');
-  const [logRetrievalUrl, setLogRetrievalUrl] = useState('');
   const [limit, setLimit] = useState(maxLogsAllowed);
   const [error, setError] = useState('');
 
@@ -74,14 +73,6 @@ export const LogStreamingView = () => {
     // wonder how splunk does this, do they use server side rendering?
     setChildItems(logs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage));
   }, [currentPage, logs]);
-
-  useEffect(() => {
-    let url = `http://127.0.0.1:8181/v1/streaming/logs?limit=${limit || maxLogsAllowed}&filter=(fileName eq "${fileName}") `;
-    if (keyword) {
-      url += ` and (keyword eq "${keyword}")`;
-    }
-    setLogRetrievalUrl(url);
-  }, [fileName, limit, keyword]);
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);

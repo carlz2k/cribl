@@ -12,6 +12,13 @@ export const retrieveLogs = (fileName, limit, keyword, onData, onError) => {
     }
   };
   events.onerror = event => {
-    onError(event);
+    // disable auto reconnect if server alaready 
+    // closes the connection
+    if (events.readyState === events.CONNECTING) {
+      events.close();
+    } else {
+      onError(event);
+    }
+    
   }
 }
