@@ -86,7 +86,6 @@ export class RequestHandler {
           reject(err);
         },
       }).catch((err) => {
-        console.log('eeee');
         console.error(err);
         reject(err);
       });

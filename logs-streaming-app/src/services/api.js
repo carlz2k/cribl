@@ -1,4 +1,4 @@
-export const maxLogsAllowed = 1000000;
+export const maxLogsAllowed = 500000;
 
 export const retrieveLogs = (fileName, limit, keyword, onData, onError) => {
   let url = `http://127.0.0.1:8181/v1/streaming/logs?limit=${limit || maxLogsAllowed}&filter=(fileName eq "${fileName}") `;

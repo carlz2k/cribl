@@ -14,6 +14,13 @@ const validator = {
   },
 };
 
+/**
+ * the core service for retrieving files
+ *
+ * @param workerPoolForConcurrentProcessing used by @class{ParallelPartitionProcessingQueue} to
+ * break file into small partitions and search in parallel
+ * @param workerPoolForSequentialProcessing used by 
+ */
 export class LogSearchService {
   constructor(
     sessionObjectStorage,
@@ -46,6 +53,10 @@ export class LogSearchService {
     this._submitRetrieveRequest(partition, sessionObject, onNextData, onError, onEnd);
   }
 
+  /**
+   * to retrieve the next partition, based on requestId, if has not reach the limit of
+   * total logs to be returned to the client
+   */
   async retrieveNext({
     requestId, onNextData, onError, onEnd,
   }) {

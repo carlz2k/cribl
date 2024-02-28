@@ -7,6 +7,10 @@ export const ServiceFunctionNames = {
   filterFile: 'FILTER_FILE',
 };
 
+/**
+ * allow worker pool to execute functions in RPC style
+ * by providing function name and arguments
+ */
 export class ServiceExecutor {
   constructor(fileReadService) {
     this._fileReadService = fileReadService;

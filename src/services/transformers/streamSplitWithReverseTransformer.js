@@ -2,7 +2,6 @@ import { EOL } from 'os';
 import { Transform } from 'stream';
 import { StringDecoder } from 'string_decoder';
 import { Configuration } from '../../models/configuration';
-import { first } from 'lodash';
 
 /**
  * this transformer first splits the chunk into individual lines

@@ -1,0 +1,210 @@
+{
+	"info": {
+		"_postman_id": "880f140e-af4b-4f0a-8ee0-bf6ab70ad671",
+		"name": "Cribl Log Retriever",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "217370"
+	},
+	"item": [
+		{
+			"name": "Search a large file with keyword and limit",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8181/v1/streaming/logs?limit=20000&filter=(fileName eq \"fhv_tripdata_2017-04.csv\") and (keyword eq \"B02942,2017-04-01 00:21:58\")",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8181",
+					"path": [
+						"v1",
+						"streaming",
+						"logs"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "20000"
+						},
+						{
+							"key": "filter",
+							"value": "(fileName eq \"fhv_tripdata_2017-04.csv\") and (keyword eq \"B02942,2017-04-01 00:21:58\")"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Stream a large file with limit",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8181/v1/streaming/logs?limit=150000&filter=(fileName eq \"fhv_tripdata_2017-04.csv\")",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8181",
+					"path": [
+						"v1",
+						"streaming",
+						"logs"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "150000"
+						},
+						{
+							"key": "filter",
+							"value": "(fileName eq \"fhv_tripdata_2017-04.csv\")"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search a file that does not exist",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8181/v1/streaming/logs?limit=100000&filter=(fileName eq \"bad.csv\")",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8181",
+					"path": [
+						"v1",
+						"streaming",
+						"logs"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "100000"
+						},
+						{
+							"key": "filter",
+							"value": "(fileName eq \"bad.csv\")"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search without file name",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8181/v1/streaming/logs?limit=100000&filter=",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8181",
+					"path": [
+						"v1",
+						"streaming",
+						"logs"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "100000"
+						},
+						{
+							"key": "filter",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Stream a small file with no limit",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8181/v1/streaming/logs?filter=(fileName eq \"taxi_zone_lookup.csv\") ",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8181",
+					"path": [
+						"v1",
+						"streaming",
+						"logs"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": "(fileName eq \"taxi_zone_lookup.csv\") "
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Stream a small file with limit",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8181/v1/streaming/logs?limit=50&filter=(fileName eq \"taxi_zone_lookup.csv\") ",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8181",
+					"path": [
+						"v1",
+						"streaming",
+						"logs"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "50"
+						},
+						{
+							"key": "filter",
+							"value": "(fileName eq \"taxi_zone_lookup.csv\") "
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

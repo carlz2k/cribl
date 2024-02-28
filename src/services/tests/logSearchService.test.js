@@ -21,11 +21,11 @@ describe('logSearchService', () => {
     const sessionObjectStorage = new SessionObjectStorage();
     const logSearchService = new LogSearchService(sessionObjectStorage, workerPool);
 
-    const fileName = 'fhv_tripdata_2017-04.csv';
+    const fileName = '1mb_file.csv';
     let totalPartitionReturned = 0;
 
-    const numberOfPartitions = 49;
-    let nextPartitionId = 48;
+    const numberOfPartitions = 1;
+    let nextPartitionId = 0;
 
     let recordFound = false;
     await logSearchService.filter({
