@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import Benchmark from 'benchmark';
 import { WorkerRequest } from './models/workerRequest.js';
 import { FilePartitioner } from './services/filePartitioner.js';
 import { ServiceFunctionNames } from './services/serviceExecutor.js';
@@ -58,8 +59,6 @@ const benchmarkTest = async () => {
             }
           }
         }
-
-        console.log(`map size = ${resultMap.size}`);
       },
     );
 
@@ -78,3 +77,11 @@ const benchmarkTest = async () => {
     console.log(error);
   }
 };
+
+const suite = new Benchmark.Suite('Benchmark filter 2.3gb file test');
+suite
+  .add('benchmark filter 2.3gb file test', () => {
+    benchmarkTest();
+  })
+  .add('String#indexOf', () => 'Hello World!'.indexOf('o') > -1)
+  .run();

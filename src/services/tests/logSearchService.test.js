@@ -46,4 +46,23 @@ describe('logSearchService', () => {
     expect(nextPartitionId).toBe(-1);
     expect(totalPartitionReturned).toBe(numberOfPartitions);
   }, 20000);
+
+  test('should return error if cannot open file', async () => {
+    try {
+      const workerPool = new WorkerPool(serviceExecutor, 10);
+      const sessionObjectStorage = new SessionObjectStorage();
+      const logSearchService = new LogSearchService(sessionObjectStorage, workerPool);
+
+      const fileName = 'bad_file.csv';
+
+      await logSearchService.filter({
+        fileName,
+        filter: 'B02876,2017-04-01 00:27:23',
+        onNextData: () => undefined,
+        onEnd: () => undefined,
+      });
+    } catch (error) {
+      expect(error.message).toEqual('cannot open file bad_file.csv');
+    }
+  }, 20000);
 });

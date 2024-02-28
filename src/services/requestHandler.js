@@ -21,6 +21,7 @@ export class RequestHandler {
       ctx.req.socket.setKeepAlive(true);
 
       ctx.set({
+        'Access-Control-Allow-Origin': '*',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
@@ -30,7 +31,7 @@ export class RequestHandler {
       ctx.status = 200;
 
       if (!fileName) {
-        ctx.status = 400;
+        ctx.status = 500;
         this._responseTransformer.writeErrorMessage(stream, '\'fileName\' cannot be empty');
         // TODO: has to figure out how to close res automatically
         // if we close the connection right away, error message would not be shown
@@ -46,7 +47,6 @@ export class RequestHandler {
       }
     } catch (error) {
       console.error('cannot handle the log search : %s', error);
-      ctx.onerror(error);
       ctx.status = 500;
       this._responseTransformer.writeErrorMessage(stream, error?.message);
       ctx.res.end();
@@ -60,10 +60,9 @@ export class RequestHandler {
       .then((requestId) => this._retrieveNext(ctx, stream, requestId, limit))
       .catch((error) => {
         console.error('cannot search log: %s %s', fileName, error);
-        ctx.onerror(error);
         ctx.status = 500;
         this._responseTransformer.writeErrorMessage(stream, error?.message);
-        // ctx.res.end();
+        ctx.res.end();
       });
   }
 
@@ -83,8 +82,13 @@ export class RequestHandler {
           resolve(requestId);
         },
         onError: (err) => {
+          console.error(err);
           reject(err);
         },
+      }).catch((err) => {
+        console.log('eeee');
+        console.error(err);
+        reject(err);
       });
     });
   }
@@ -97,8 +101,6 @@ export class RequestHandler {
           requestId,
         });
         if (logsCount < limit) {
-          ctx.status = 200;
-
           this._logSearchService.retrieveNext({
             requestId,
             onNextData: (response) => {
@@ -108,7 +110,6 @@ export class RequestHandler {
               }
             },
             onEnd: () => {
-              console.log('fetch more');
               this._retrieveNext(ctx, stream, requestId, limit);
             },
             onError: (err) => {
@@ -155,7 +156,7 @@ export class RequestHandler {
     }).catch((error) => {
       ctx.status = 500;
       this._responseTransformer.writeErrorMessage(stream, error?.message);
-      // ctx.res.end();
+      ctx.res.end();
     });
   }
 

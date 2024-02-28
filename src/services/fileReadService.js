@@ -15,7 +15,7 @@ export class FileReadService {
       start,
       end,
       encoding: Configuration.defaultEncoding,
-      highWaterMark: 200 * 1000,
+      highWaterMark: 700000,
     });
 
     // transformers must be in order
