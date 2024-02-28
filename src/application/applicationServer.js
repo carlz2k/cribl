@@ -1,6 +1,7 @@
 import Koa from 'koa';
 import { createRequestHandler } from '../services/servicesFactory';
 import { QueryParser } from '../services/transformers/queryParaser';
+import { Configuration } from '../models/configuration';
 
 const API = {
   logsStream: '/v1/streaming/logs',
@@ -18,7 +19,7 @@ export const startServer = () => {
 
     if (API.logsStream === ctx.path) {
       const {
-        limit, keyword, fileName,
+        limit = Configuration.totalLogsLimit, keyword, fileName,
       } = queryObject;
 
       requestHandler.retrieveLogs(ctx, fileName, limit, keyword);

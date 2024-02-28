@@ -92,7 +92,6 @@ export class LogSearchService {
     const parallelPartitionProcessingQueue = new ParallelPartitionProcessingQueue(
       startingPoint,
       this._workerPoolForConcurrentProcessing,
-      Configuration.maxWorkersForFilter,
       limit,
       () => {
         onEnd({ requestId });

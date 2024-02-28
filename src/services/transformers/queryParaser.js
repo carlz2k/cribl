@@ -27,7 +27,9 @@ export class QueryParser {
   // but here we will just parse using hardcoded delimiters
   _parseFilter(filter = '') {
     const result = {};
-    const filterItems = filter.replaceAll('(', '').replaceAll(')', '').replaceAll('"', '').split('and');
+    const filterItems = filter.replaceAll('(', '').replaceAll(')', '').replaceAll('"', '')
+      .replaceAll('\'', '')
+      .split('and');
     filterItems.forEach((itemString) => {
       const trimmedItemString = itemString.trim();
       if (trimmedItemString) {

@@ -30,7 +30,7 @@ describe('logSearchService', () => {
     let recordFound = false;
     await logSearchService.filter({
       fileName,
-      filter: 'DropOff_datetime',
+      filter: 'B02876,2017-04-01 00:27:23',
       onNextData: (result) => {
         if (result.logs?.length) {
           recordFound = true;
