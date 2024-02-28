@@ -68,6 +68,10 @@ export const LogStreamingView = () => {
   };
 
   useEffect(() => {
+    // TODO: this will be a serious performance issue once number of logs increase
+    // probably better to put the logs in a map indexed by the page number
+    // do not have time to implement right now
+    // wonder how splunk does this, do they use server side rendering?
     setChildItems(logs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage));
   }, [currentPage, logs]);
 

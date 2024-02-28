@@ -21,6 +21,14 @@ from a file in /var/log directory.
 
     Additionally, a postman collection is provided in the test_scripts directory
 
+# UI
+
+A basic UI is provied for the demo purpose.  It allows user to search logs files in /var/logs by
+specifying fileName, keyword, and limit.  The maximum number of logs can be returned is 500000.
+UI might stop functioning beyong that limit because events are pushed in a high rate and high volume
+which will cause UI to freeze or run out of memory.  To improve the performance, some form of the rate
+limit should be implemented to allow user to control the speed of flow of logs.
+
 # REST API
 
 The REST API is described below.
@@ -53,3 +61,8 @@ The REST API is described below.
     Transfer-Encoding: chunked
 
     data: {"logs":["B02942,2017-04-01 00:21:58,,,"],"count":1,"requestId":"2ef72aa8-3260-4005-a0e8-01f85beadb5c"}\n\n
+
+# Design Documentation
+
+1) A brief description of the design of this application: https://docs.google.com/document/d/1hVqFm-HP4maUlXLuWN438JxQ-PHpyDYeQL_A1Oajpyg/edit
+2) A brief description of the design of the bonus qeustion: https://docs.google.com/document/d/1ORNcGmf3dumybolWGdMK32xwYdI52ibsXrHJP64dz7k/edit?usp=sharing
