@@ -12,6 +12,9 @@ Koa used as the web framework and server.
 
 ## Install and Run the app
 
+    Prerequisite: The app was developed using Node 20.11.0.  Please download
+    latest version of NodeJs before running
+    
     clone the repo, and in the working directory run
     sh run_app.sh
 
