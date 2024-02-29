@@ -4,12 +4,13 @@ import { ParallelPartitionProcessingQueue } from '../models/parallelPartitionPro
 import { WorkerRequest } from '../models/workerRequest';
 import { FilePartitionSize, FilePartitioner } from './filePartitioner';
 import { ServiceFunctionNames } from './serviceExecutor';
+import { FileNotExistsError } from '../models/exceptions/fileNotExistsError';
 
 const validator = {
   validateFileName: (fileName) => {
     const fullFileName = `${Configuration.rootDir}${fileName}`;
     if (!fs.existsSync(fullFileName)) {
-      throw new Error(`cannot open file ${fullFileName}`);
+      throw new FileNotExistsError(`cannot open file ${fullFileName}`);
     }
   },
 };

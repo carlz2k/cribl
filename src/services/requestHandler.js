@@ -1,3 +1,5 @@
+import { FileNotExistsError } from "../models/exceptions/fileNotExistsError";
+
 /**
  * service for handling http requests
  * should make it framework agnostic
@@ -31,7 +33,7 @@ export class RequestHandler {
       ctx.status = 200;
 
       if (!fileName) {
-        ctx.status = 500;
+        ctx.status = 400;
         this._responseTransformer.writeErrorMessage(stream, '\'fileName\' cannot be empty');
         // TODO: has to figure out how to close res automatically
         // if we close the connection right away, error message would not be shown
@@ -59,8 +61,12 @@ export class RequestHandler {
     return this._retrieveFirst(stream, fileName, limit)
       .then((requestId) => this._retrieveNext(ctx, stream, requestId, limit))
       .catch((error) => {
+        if (error instanceof FileNotExistsError) {
+          ctx.status = 400;
+        } else {
+          ctx.status = 500;
+        }
         console.error('cannot search log: %s %s', fileName, error);
-        ctx.status = 500;
         this._responseTransformer.writeErrorMessage(stream, error?.message);
         ctx.res.end();
       });
@@ -153,7 +159,12 @@ export class RequestHandler {
         ctx.res.end();
       },
     }).catch((error) => {
-      ctx.status = 500;
+      if (error instanceof FileNotExistsError) {
+        ctx.status = 400;
+      } else {
+        ctx.status = 500;
+      }
+      console.error('cannot search log with key word: %s %s %s', fileName, filter, error);
       this._responseTransformer.writeErrorMessage(stream, error?.message);
       ctx.res.end();
     });

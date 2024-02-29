@@ -54,6 +54,7 @@ describe('requestHandler', () => {
     };
 
     await requestHandler.retrieveLogs(ctx, '', 500);
+    expect(ctx.status).toEqual(400);
     expect(stream.write).toHaveBeenCalledWith('event: {"error":{"message":"\'fileName\' cannot be empty"}}\n\n');
   });
 
