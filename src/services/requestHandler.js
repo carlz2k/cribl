@@ -61,11 +61,7 @@ export class RequestHandler {
     return this._retrieveFirst(stream, fileName, limit)
       .then((requestId) => this._retrieveNext(ctx, stream, requestId, limit))
       .catch((error) => {
-        if (error instanceof FileNotExistsError) {
-          ctx.status = 400;
-        } else {
-          ctx.status = 500;
-        }
+        this._mapErrorToStatus(error, ctx);
         console.error('cannot search log: %s %s', fileName, error);
         this._responseTransformer.writeErrorMessage(stream, error?.message);
         ctx.res.end();
@@ -159,11 +155,7 @@ export class RequestHandler {
         ctx.res.end();
       },
     }).catch((error) => {
-      if (error instanceof FileNotExistsError) {
-        ctx.status = 400;
-      } else {
-        ctx.status = 500;
-      }
+      this._mapErrorToStatus(error, ctx);
       console.error('cannot search log with key word: %s %s %s', fileName, filter, error);
       this._responseTransformer.writeErrorMessage(stream, error?.message);
       ctx.res.end();
@@ -200,6 +192,13 @@ export class RequestHandler {
     };
   }
 
+  _mapErrorToStatus(error, ctx) {
+    if (error instanceof FileNotExistsError) {
+      ctx.status = 400;
+    } else {
+      ctx.status = 500;
+    }
+  }
   _getLogsCount(response) {
     const { requestId } = response;
 
