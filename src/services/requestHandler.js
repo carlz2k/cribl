@@ -57,6 +57,11 @@ export class RequestHandler {
     return undefined;
   }
 
+  /**
+   * retrieve partition one by one from last partition first
+   * _retrieveFirst returns the first partition
+   * then recursively calls _retrieveNext for other partitions
+   */
   async _handleRetrieveOnly(ctx, stream, fileName, limit) {
     return this._retrieveFirst(stream, fileName, limit)
       .then((requestId) => this._retrieveNext(ctx, stream, requestId, limit))
@@ -199,6 +204,7 @@ export class RequestHandler {
       ctx.status = 500;
     }
   }
+
   _getLogsCount(response) {
     const { requestId } = response;
 
