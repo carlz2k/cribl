@@ -155,7 +155,8 @@ export class RequestHandler {
       limit,
       onEnd: (response) => {
         if (this._getLogsCount(response) === 0) {
-          this._responseTransformer.writeSystemMessage(stream, 'no records found');
+          this._responseTransformer.writeDataObject(stream, LogsObjectMapper
+            .toJson(response?.requestId, []));
         }
         stream.end();
       },
