@@ -55,6 +55,11 @@ export class ResponseTransformer {
       if (message) {
         messageSting = JSON.stringify(message);
       }
+
+      // sse documentation does not cover any error
+      // message, probably should send error
+      // as another data message, but just
+      // treat error as another event for now for simplicity
       return `event: ${messageSting}\n\n`;
     }
 
