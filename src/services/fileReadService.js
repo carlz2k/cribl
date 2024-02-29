@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { Configuration } from '../models/configuration.js';
 import { StreamSplitWithReverseTransformer } from './transformers/streamSplitWithReverseTransformer.js';
+import { LogsObjectMapper } from './transformers/logsObjectMapper.js';
 
 /**
  * main service for file handling, DO NOT call it directly,
@@ -58,7 +59,6 @@ export class FileReadService {
       // back pressure
       while (page) {
         const response = {
-          count: page?.length,
           logs: page,
           requestId,
         };

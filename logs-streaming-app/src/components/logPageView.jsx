@@ -5,7 +5,7 @@ export const LogPageView = ({ logs }) => {
     <Box>
       {
         logs.map((log, index) => {
-          return (<p key={index}>${log}</p>);
+          return (<p key={index}>${log?.value}</p>);
         })
       }
     </Box>

@@ -63,6 +63,8 @@ export const LogStreamingView = () => {
         }
       }, () => {
         setError(ErrorMessage.general);
+        setPageCount(0);
+        setLogs([]);
       });
   };
 

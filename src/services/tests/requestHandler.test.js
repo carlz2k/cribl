@@ -1,6 +1,22 @@
+import _ from 'lodash';
 import { SessionObject } from '../../models/sessionObject';
 import { RequestHandler } from '../requestHandler';
 import { ResponseTransformer } from '../transformers/responseTransformer';
+
+const _mockCtx = () => ({
+  onerror: jest.fn(),
+  req: {
+    socket: {
+      setTimeout: jest.fn(),
+      setNoDelay: jest.fn(),
+      setKeepAlive: jest.fn(),
+    },
+  },
+  res: {
+    end: jest.fn(),
+  },
+  set: jest.fn(),
+});
 
 describe('requestHandler', () => {
   test('should prune logs when hit the limit', async () => {
@@ -22,12 +38,19 @@ describe('requestHandler', () => {
 
     expect(update).toHaveBeenCalledWith(sessionObject);
 
-    expect(result).toEqual({ logs: [1, 2], count: 2, requestId: 'reqId' });
+    expect(result).toEqual({
+      logs: [{
+        value: 1,
+      }, { value: 2 }],
+      count: 2,
+      requestId: 'reqId',
+    });
   });
 
   test('should write error message if file name is empty', async () => {
     const stream = {
       write: jest.fn(),
+      end: jest.fn(),
     };
 
     const requestHandler = new RequestHandler({
@@ -38,29 +61,18 @@ describe('requestHandler', () => {
       newStream: () => stream,
     });
 
-    const ctx = {
-      onerror: jest.fn(),
-      req: {
-        socket: {
-          setTimeout: jest.fn(),
-          setNoDelay: jest.fn(),
-          setKeepAlive: jest.fn(),
-        },
-      },
-      res: {
-        end: jest.fn(),
-      },
-      set: jest.fn(),
-    };
+    const ctx = _mockCtx();
 
     await requestHandler.retrieveLogs(ctx, '', 500);
     expect(ctx.status).toEqual(400);
     expect(stream.write).toHaveBeenCalledWith('event: {"error":{"message":"\'fileName\' cannot be empty"}}\n\n');
+    expect(stream.end).toHaveBeenCalled();
   });
 
   test('should not request next if hit the lmit', async () => {
     const stream = {
       write: jest.fn(),
+      end: jest.fn(),
     };
 
     const sessionObect = new SessionObject();
@@ -79,8 +91,11 @@ describe('requestHandler', () => {
 
     const requestId = 'reqId';
 
-    await requestHandler._retrieveNext(requestId, 50);
+    const ctx = _mockCtx();
+
+    await requestHandler._retrieveNext(ctx, stream, requestId, 50);
     expect(logService.retrieveNext).not.toHaveBeenCalled();
+    expect(stream.end).toHaveBeenCalled();
   });
 
   test('should call request next', async () => {

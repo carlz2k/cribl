@@ -1,4 +1,5 @@
 import { FileNotExistsError } from "../models/exceptions/fileNotExistsError";
+import { LogsObjectMapper } from "./transformers/logsObjectMapper";
 
 /**
  * service for handling http requests
@@ -15,7 +16,7 @@ export class RequestHandler {
   }
 
   retrieveLogs(ctx, fileName, limit, filter) {
-    const stream = this._outputStreamFactory.newStream();
+    const stream = this._outputStreamFactory.newStream(ctx);
 
     try {
       ctx.req.socket.setTimeout(0);
@@ -35,10 +36,7 @@ export class RequestHandler {
       if (!fileName) {
         ctx.status = 400;
         this._responseTransformer.writeErrorMessage(stream, '\'fileName\' cannot be empty');
-        // TODO: has to figure out how to close res automatically
-        // if we close the connection right away, error message would not be shown
-        // has to add some delay, but there is probably a better way
-        // ctx.res.end();
+        stream.end();
         return undefined;
       }
 
@@ -51,7 +49,7 @@ export class RequestHandler {
       console.error('cannot handle the log search : %s', error);
       ctx.status = 500;
       this._responseTransformer.writeErrorMessage(stream, error?.message);
-      ctx.res.end();
+      stream.end();
     }
 
     return undefined;
@@ -69,7 +67,7 @@ export class RequestHandler {
         this._mapErrorToStatus(error, ctx);
         console.error('cannot search log: %s %s', fileName, error);
         this._responseTransformer.writeErrorMessage(stream, error?.message);
-        ctx.res.end();
+        stream.end();
       });
   }
 
@@ -122,6 +120,8 @@ export class RequestHandler {
               throw err;
             },
           });
+        } else {
+          stream.end();
         }
       }
     }
@@ -157,13 +157,13 @@ export class RequestHandler {
         if (this._getLogsCount(response) === 0) {
           this._responseTransformer.writeSystemMessage(stream, 'no records found');
         }
-        ctx.res.end();
+        stream.end();
       },
     }).catch((error) => {
       this._mapErrorToStatus(error, ctx);
       console.error('cannot search log with key word: %s %s %s', fileName, filter, error);
       this._responseTransformer.writeErrorMessage(stream, error?.message);
-      ctx.res.end();
+      stream.end();
     });
   }
 
@@ -190,11 +190,7 @@ export class RequestHandler {
     sessionObject.logsCount = Math.min(logsCount + count, limit);
     this._sessionObjectStorage.update(sessionObject);
 
-    return {
-      ...response,
-      logs,
-      count: logs.length,
-    };
+    return LogsObjectMapper.toJson(requestId, logs);
   }
 
   _mapErrorToStatus(error, ctx) {

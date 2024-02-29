@@ -5,7 +5,16 @@ import { PassThrough } from 'stream';
  * for looser coupling and easier to mock tests
  */
 export class OutputStreamFactory {
-  newStream() {
-    return new PassThrough();
+  newStream(ctx, closeConnectionWhenDone = true) {
+    const stream = new PassThrough();
+    stream.on('end', () => {
+      if (closeConnectionWhenDone) {
+        ctx.res.end();
+      }
+
+      stream.destroy();
+    });
+
+    return stream;
   }
 }
