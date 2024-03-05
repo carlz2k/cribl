@@ -26,6 +26,7 @@ export const LogStreamingView = () => {
   const [keyword, setKeyword] = useState('');
   const [limit, setLimit] = useState(maxLogsAllowed);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const _validate = () => {
     if (!fileName) {
@@ -61,10 +62,16 @@ export const LogStreamingView = () => {
           setChildItems(logs.slice(0, itemsPerPage));
           setCurrentPage(1);
         }
-      }, () => {
-        setError(ErrorMessage.general);
+      }, (error) => {
+        if (error?.error?.message) {
+          setError(error?.error?.message);
+        } else {
+          setError(ErrorMessage.general);
+        }
         setPageCount(0);
         setLogs([]);
+      }, (loading) => {
+        setLoading(loading);
       });
   };
 
@@ -140,7 +147,7 @@ export const LogStreamingView = () => {
           </Box>
           <Box sx={{ m: 2 }}>
             <Pagination count={pageCount} variant="outlined" shape="rounded" onChange={handlePageChange} />
-            <LogPageView logs={childItems} />
+            <LogPageView logs={childItems} loading={loading} />
           </Box>
         </Box>
       }

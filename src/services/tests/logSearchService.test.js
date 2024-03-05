@@ -1,4 +1,5 @@
 import { Configuration } from "../../models/configuration";
+import { FilePartitionSize, FilePartitioner } from "../filePartitioner";
 import { LogSearchService } from "../logSearchService";
 import { serviceExecutor } from "../serviceExecutor";
 import { SessionObjectStorage } from "../sessionObjectStorage";
@@ -8,7 +9,7 @@ describe('logSearchService', () => {
   const rootDir = Configuration.rootDir;
 
   beforeEach(() => {
-    Configuration.rootDir = '';
+    Configuration.rootDir = '/var/log/';
   });
 
   afterEach(() => {
@@ -21,11 +22,11 @@ describe('logSearchService', () => {
     const sessionObjectStorage = new SessionObjectStorage();
     const logSearchService = new LogSearchService(sessionObjectStorage, workerPool);
 
-    const fileName = '1mb_file.csv';
+    const fileName = 'fhv_tripdata_2017-04.csv';
     let totalPartitionReturned = 0;
 
-    const numberOfPartitions = 1;
-    let nextPartitionId = 0;
+    const numberOfPartitions = 49;
+    let nextPartitionId = 48;
 
     let recordFound = false;
     await logSearchService.filter({

@@ -1,9 +1,9 @@
 export class ResponseTransformer {
-  writeSystemMessage(stream, message) {
+  writeSystemMessage(stream, eventName) {
     const response = this._format(
       {
         type: 'event',
-        message,
+        message: eventName,
       },
     );
     stream.write(response);
@@ -19,10 +19,11 @@ export class ResponseTransformer {
   }
 
   writeErrorMessage(stream, error) {
+    this.writeSystemMessage(stream, 'errorMessage');
     stream.write(
       this._format(
         {
-          type: 'error',
+          type: 'data',
           message: {
             error: {
               message: error,
@@ -39,7 +40,7 @@ export class ResponseTransformer {
     } = data;
 
     if (type === 'event') {
-      return `event: ${message}\n\n`;
+      return `event: ${message}\n`;
     }
 
     if (type === 'data') {
@@ -48,19 +49,6 @@ export class ResponseTransformer {
         messageSting = JSON.stringify(message);
       }
       return `data: ${messageSting}\n\n`;
-    }
-
-    if (type === 'error') {
-      let messageSting = '';
-      if (message) {
-        messageSting = JSON.stringify(message);
-      }
-
-      // sse documentation does not cover any error
-      // message, probably should send error
-      // as another data message, but just
-      // treat error as another event for now for simplicity
-      return `event: ${messageSting}\n\n`;
     }
 
     return '';

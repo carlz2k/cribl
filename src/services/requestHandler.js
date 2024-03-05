@@ -80,6 +80,7 @@ export class RequestHandler {
           requestId = response?.requestId;
           const responseObject = this._updateResponse(response, limit);
           if (responseObject) {
+            this._responseTransformer.writeSystemMessage(stream, 'logs');
             this._responseTransformer.writeDataObject(stream, responseObject);
           }
         },
@@ -110,6 +111,7 @@ export class RequestHandler {
             onNextData: (response) => {
               const responseObject = this._updateResponse(response, limit);
               if (responseObject) {
+                this._responseTransformer.writeSystemMessage(stream, 'logs');
                 this._responseTransformer.writeDataObject(stream, responseObject);
               }
             },
@@ -129,13 +131,12 @@ export class RequestHandler {
 
   async _handleFilter(ctx, fileName, stream, filter, limit) {
     // start the event pushing to make user unblocking if scanning large files
-    this._responseTransformer.writeSystemMessage(stream, 'search in progress');
-
     this._logSearchService.filter({
       fileName,
       filter,
       onNextData: (response) => {
         const logs = response?.logs;
+        this._responseTransformer.writeSystemMessage(stream, 'logs');
         logs.forEach((block) => {
           if (block?.length) {
             const logsResponse = {
@@ -145,7 +146,6 @@ export class RequestHandler {
             };
 
             const responseObject = this._updateResponse(logsResponse, limit);
-
             if (responseObject) {
               this._responseTransformer.writeDataObject(stream, responseObject);
             }
@@ -194,11 +194,21 @@ export class RequestHandler {
     return LogsObjectMapper.toJson(requestId, logs);
   }
 
+  /**
+   * map error object to http response status code
+   * 200, 400, etc
+   */
   _mapErrorToStatus(error, ctx) {
+    // TODO: trying to figure out how
+    // to pass stream data and set
+    // error code at the same time
+    // for now just use 200 for everything
+    // to allow erro object to be passed
+    // as data
     if (error instanceof FileNotExistsError) {
-      ctx.status = 400;
+      ctx.status = 200;
     } else {
-      ctx.status = 500;
+      ctx.status = 200;
     }
   }
 
