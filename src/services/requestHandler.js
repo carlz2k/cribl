@@ -105,7 +105,12 @@ export class RequestHandler {
         const logsCount = this._getLogsCount({
           requestId,
         });
-        if (logsCount < limit) {
+
+        const nextPartitionId = this._getNextPartitionId({
+          requestId,
+        });
+
+        if (logsCount < limit && nextPartitionId) {
           this._logSearchService.retrieveNext({
             requestId,
             onNextData: (response) => {
@@ -218,5 +223,13 @@ export class RequestHandler {
     const sessionObject = this._sessionObjectStorage.get(requestId);
 
     return sessionObject.logsCount;
+  }
+
+  _getNextPartitionId(response) {
+    const { requestId } = response;
+
+    const sessionObject = this._sessionObjectStorage.get(requestId);
+
+    return sessionObject.nextPartitionId;
   }
 }

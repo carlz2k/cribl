@@ -78,6 +78,37 @@ describe('requestHandler', () => {
 
     const sessionObect = new SessionObject();
     sessionObect.logsCount = 60;
+    sessionObect.nextPartitionId = 1;
+
+    const logService = {
+      retrieve: jest.fn(),
+      retrieveNext: jest.fn(),
+    };
+
+    const requestHandler = new RequestHandler(logService, {
+      update: jest.fn(), get: () => sessionObect,
+    }, new ResponseTransformer(), {
+      newStream: () => stream,
+    });
+
+    const requestId = 'reqId';
+
+    const ctx = _mockCtx();
+
+    await requestHandler._retrieveNext(ctx, stream, requestId, 50);
+    expect(logService.retrieveNext).not.toHaveBeenCalled();
+    expect(stream.end).toHaveBeenCalled();
+  });
+
+  test('should not request next if no more partitions', async () => {
+    const stream = {
+      write: jest.fn(),
+      end: jest.fn(),
+    };
+
+    const sessionObect = new SessionObject();
+    sessionObect.logsCount = 10;
+    sessionObect.nextPartitionId = undefined;
 
     const logService = {
       retrieve: jest.fn(),
@@ -106,6 +137,7 @@ describe('requestHandler', () => {
 
     const sessionObect = new SessionObject();
     sessionObect.logsCount = 20;
+    sessionObect.nextPartitionId = 1;
 
     const logService = {
       retrieve: jest.fn(),

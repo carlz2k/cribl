@@ -41,7 +41,10 @@ export class SessionObjectStorage {
     const object = this.get(id);
     if (object && object.nextPartitionId > 0) {
       object.nextPartitionId -= 1;
-      this.update(object);
+    } else {
+      // if no more partitions return undefined, maybe should use optional
+      object.nextPartitionId = undefined;
     }
+    this.update(object);
   }
 }

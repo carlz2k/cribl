@@ -20,7 +20,7 @@ const validator = {
  *
  * @param workerPoolForConcurrentProcessing used by @class{ParallelPartitionProcessingQueue} to
  * break file into small partitions and search in parallel
- * @param workerPoolForSequentialProcessing used by 
+ * @param workerPoolForSequentialProcessing used by
  */
 export class LogSearchService {
   constructor(
