@@ -12,25 +12,11 @@ describe('fileReadService', () => {
     Configuration.rootDir = rootDir;
   });
 
-  test('should read all lines of a file block with a filter', (done) => {
-    const doA = (i) => {
-      console.log(i);
-      if (i === 4) {
-        done();
-      }
-    };
-
-
-    for (let i of [1, 2, 3, 4]) {
-      setTimeout(() => {
-        doA(i);
-      }, 1);
-    }
-
+  test('should read all lines of a file block with a filter', async () => {
     const fileReadService = new FileReadService();
     const fileName = 'taxi_zone_lookup.csv';
 
-    const lines = fileReadService.retrieveEntirePartitionWithFilter({
+    const lines = await fileReadService.retrieveEntirePartitionWithFilter({
       partition: {
         start: 200, end: 2000, id: 2,
       },
